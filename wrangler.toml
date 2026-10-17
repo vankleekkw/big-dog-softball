@@ -1,0 +1,27 @@
+name = "big-dog-softball"
+compatibility_date = "2026-10-17"
+pages_build_output_dir = "public"
+
+# D1 (serverless SQLite). database_id is a placeholder until the real database is
+# created in Kris's Cloudflare account:  npx wrangler d1 create softball
+# Local `wrangler pages dev` uses a local SQLite emulation under .wrangler/ and
+# ignores this id, so local smoke tests work before the remote DB exists.
+[[d1_databases]]
+binding = "DB"
+database_name = "softball"
+database_id = "PLACEHOLDER_RUN_wrangler_d1_create_softball"
+
+# R2 object storage for player/logo photos (free tier). Optional for the first
+# smoke test — player photo_url can also be any external URL. Create with:
+#   npx wrangler r2 bucket create big-dog-assets
+[[r2_buckets]]
+binding = "ASSETS_BUCKET"
+bucket_name = "big-dog-assets"
+
+# Admin auth (Cloudflare Access). Set the real values as Pages env vars in the
+# dashboard once the Access application exists. See functions/api/admin/_middleware.js.
+# For LOCAL dev only, put ADMIN_DEV_BYPASS=1 in .dev.vars (gitignored) to skip
+# JWT verification. In production the middleware fails CLOSED if these are unset.
+[vars]
+ACCESS_TEAM_DOMAIN = ""   # e.g. "bigdog.cloudflareaccess.com"
+ACCESS_AUD = ""           # Access application Audience (AUD) tag

@@ -1,0 +1,17 @@
+{
+  "name": "big-dog-softball",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Big Dog Gotta Eat — team website (Cloudflare Pages + Functions + D1)",
+  "scripts": {
+    "dev": "wrangler pages dev public --d1=DB --compatibility-date=2026-10-17",
+    "db:init:local": "wrangler d1 execute softball --local --file=./migrations/0001_init.sql",
+    "db:seed:local": "wrangler d1 execute softball --local --file=./seed/seed.generated.sql",
+    "db:init:remote": "wrangler d1 execute softball --remote --file=./migrations/0001_init.sql",
+    "db:seed:remote": "wrangler d1 execute softball --remote --file=./seed/seed.generated.sql",
+    "deploy": "wrangler pages deploy public"
+  },
+  "devDependencies": {
+    "wrangler": "^4.15.0"
+  }
+}

@@ -1,0 +1,132 @@
+/* Big Dog Gotta Eat — design system
+   Palette: black / gray / orange (confirmed against the bulldog logo).
+   Mobile-first, no build step. Pages link this once; page-specific rules go in
+   a <style> block or page CSS, but reuse these tokens + components. */
+
+:root {
+  /* Brand */
+  --orange:       #F26A21;   /* primary accent (logo collar/highlights) */
+  --orange-600:   #d4560f;
+  --ink:          #111214;   /* near-black background */
+  --ink-2:        #1b1d21;   /* raised surface */
+  --ink-3:        #262a30;   /* card / border on dark */
+  --gray:         #8a9099;
+  --gray-light:   #c7ccd2;
+  --paper:        #f5f6f7;
+  --white:        #ffffff;
+
+  /* Semantic (dark is the site's default look) */
+  --bg:           var(--ink);
+  --surface:      var(--ink-2);
+  --card:         var(--ink-3);
+  --text:         #eef0f2;
+  --text-muted:   var(--gray-light);
+  --accent:       var(--orange);
+  --border:       #33373d;
+  --win:          #43c06a;
+  --loss:         #e5544b;
+  --tie:          var(--gray);
+
+  --radius:       12px;
+  --radius-sm:    8px;
+  --maxw:         1040px;
+  --gap:          16px;
+  --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-head: "Arial Black", "Helvetica Neue", var(--font);
+}
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+img { max-width: 100%; display: block; }
+h1, h2, h3 { font-family: var(--font-head); letter-spacing: -0.01em; line-height: 1.1; margin: 0 0 .5em; }
+h1 { font-size: clamp(1.8rem, 5vw, 2.8rem); text-transform: uppercase; }
+h2 { font-size: clamp(1.3rem, 3.5vw, 1.8rem); }
+
+.container { max-width: var(--maxw); margin: 0 auto; padding: 0 16px; }
+.section { padding: 28px 0; }
+
+/* ---- Top nav ---- */
+.site-header {
+  position: sticky; top: 0; z-index: 50;
+  background: rgba(17,18,20,.92); backdrop-filter: blur(8px);
+  border-bottom: 2px solid var(--accent);
+}
+.nav {
+  max-width: var(--maxw); margin: 0 auto; padding: 10px 16px;
+  display: flex; align-items: center; gap: 14px;
+}
+.nav .brand { display: flex; align-items: center; gap: 10px; font-family: var(--font-head);
+  text-transform: uppercase; color: var(--text); font-size: 1rem; }
+.nav .brand img { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; }
+.nav .links { display: flex; gap: 4px; margin-left: auto; flex-wrap: wrap; }
+.nav .links a {
+  color: var(--text-muted); padding: 6px 10px; border-radius: var(--radius-sm);
+  font-size: .9rem; font-weight: 600;
+}
+.nav .links a:hover { color: var(--text); background: var(--ink-3); text-decoration: none; }
+.nav .links a.active { color: var(--ink); background: var(--accent); }
+
+/* ---- Cards ---- */
+.card {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 18px;
+}
+.card-grid { display: grid; gap: var(--gap);
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); }
+
+/* ---- Buttons ---- */
+.btn {
+  display: inline-flex; align-items: center; gap: 8px; cursor: pointer;
+  background: var(--accent); color: #1a1205; border: none; font-weight: 700;
+  padding: 10px 16px; border-radius: var(--radius-sm); font-size: .95rem;
+}
+.btn:hover { background: var(--orange-600); text-decoration: none; }
+.btn.secondary { background: var(--ink-3); color: var(--text); border: 1px solid var(--border); }
+.btn.sm { padding: 6px 10px; font-size: .85rem; }
+
+/* ---- Tables (stat tables, Baseball-Reference feel) ---- */
+.table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch;
+  border: 1px solid var(--border); border-radius: var(--radius); }
+table.stats { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums;
+  font-size: .9rem; min-width: 560px; }
+table.stats th, table.stats td { padding: 8px 10px; text-align: right; white-space: nowrap; }
+table.stats th:first-child, table.stats td:first-child { text-align: left; position: sticky; left: 0;
+  background: var(--card); }
+table.stats thead th { background: var(--ink-3); color: var(--text-muted);
+  text-transform: uppercase; font-size: .72rem; letter-spacing: .04em; border-bottom: 2px solid var(--accent); }
+table.stats tbody tr:nth-child(even) { background: rgba(255,255,255,.02); }
+table.stats tbody tr:hover { background: rgba(242,106,33,.08); }
+table.stats tfoot td { border-top: 2px solid var(--border); font-weight: 700; }
+
+/* ---- Pills / result badges ---- */
+.pill { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: .75rem;
+  font-weight: 700; }
+.pill.w { background: rgba(67,192,106,.18); color: var(--win); }
+.pill.l { background: rgba(229,84,75,.18); color: var(--loss); }
+.pill.t { background: rgba(138,144,153,.2); color: var(--tie); }
+
+/* ---- Stat tiles ---- */
+.stat-row { display: grid; gap: var(--gap); grid-template-columns: repeat(auto-fit, minmax(120px,1fr)); }
+.stat-tile { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 14px; text-align: center; }
+.stat-tile .value { font-family: var(--font-head); font-size: 1.9rem; color: var(--accent); }
+.stat-tile .label { font-size: .75rem; text-transform: uppercase; color: var(--text-muted);
+  letter-spacing: .05em; }
+
+.muted { color: var(--text-muted); }
+.center { text-align: center; }
+.loading { padding: 40px; text-align: center; color: var(--text-muted); }
+
+/* ---- Footer ---- */
+.site-footer { border-top: 1px solid var(--border); margin-top: 40px; padding: 24px 0;
+  color: var(--text-muted); font-size: .85rem; text-align: center; }
