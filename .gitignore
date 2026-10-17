@@ -1,0 +1,19 @@
+# Node / Wrangler
+node_modules/
+.wrangler/
+dist/
+
+# Local scraper artifacts
+*.db
+.venv/
+__pycache__/
+
+# Local seed SQL generated from the scrape (not committed; regenerated as needed)
+seed/seed.generated.sql
+
+# Env / secrets
+.dev.vars
+.env
+
+# OS
+.DS_Store
