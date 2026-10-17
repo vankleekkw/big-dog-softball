@@ -4,7 +4,7 @@
   "private": true,
   "description": "Big Dog Gotta Eat — team website (Cloudflare Pages + Functions + D1)",
   "scripts": {
-    "dev": "wrangler pages dev public --d1=DB --compatibility-date=2026-10-17",
+    "dev": "wrangler pages dev public --compatibility-date=2026-10-17",
     "db:init:local": "wrangler d1 execute softball --local --file=./migrations/0001_init.sql",
     "db:seed:local": "wrangler d1 execute softball --local --file=./seed/seed.generated.sql",
     "db:init:remote": "wrangler d1 execute softball --remote --file=./migrations/0001_init.sql",
@@ -13,5 +13,9 @@
   },
   "devDependencies": {
     "wrangler": "^4.15.0"
+  },
+  "allowScripts": {
+    "esbuild@0.28.2": true,
+    "workerd@1.20261012.1": true
   }
 }

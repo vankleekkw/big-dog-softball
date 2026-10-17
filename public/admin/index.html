@@ -1,0 +1,203 @@
+<!doctype html>
+<!--
+  Big Dog Gotta Eat — Admin panel.
+
+  PRODUCTION REQUIREMENT: Cloudflare Access must be configured to protect
+  BOTH the `/admin*` path (this page) AND the `/api/admin*` path (the API
+  the Access middleware at functions/api/admin/_middleware.js is a second,
+  independent layer of protection on the API itself, but it should never be
+  the only thing standing between the public and this UI. Set the Access
+  application's domain path to cover `/admin*`; the API's own middleware
+  reads env.ACCESS_TEAM_DOMAIN / env.ACCESS_AUD to verify the same Access
+  JWT. See functions/_lib/auth.js for the verification details.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Admin — Big Dog Gotta Eat</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="stylesheet" href="/css/styles.css">
+<link rel="stylesheet" href="/admin/admin.css">
+</head>
+<body class="admin-body">
+<header class="site-header">
+  <nav class="nav">
+    <a class="brand" href="/"><img src="/assets/logo.jpg" alt="Big Dog Gotta Eat logo">Big Dog Gotta Eat — Admin</a>
+    <div class="links"><a href="/">Back to site</a></div>
+  </nav>
+</header>
+
+<main class="container section">
+  <div id="admin-status" class="admin-banner" hidden></div>
+
+  <nav class="admin-tabs" role="tablist" aria-label="Admin sections">
+    <button class="admin-tab active" data-tab="players" type="button">Players</button>
+    <button class="admin-tab" data-tab="rosters" type="button">Rosters</button>
+    <button class="admin-tab" data-tab="seasons" type="button">Seasons &amp; Leagues</button>
+    <button class="admin-tab" data-tab="games" type="button">Games</button>
+    <button class="admin-tab" data-tab="stats" type="button">Enter Game Stats</button>
+  </nav>
+
+  <!-- ---- Players ---- -->
+  <section id="tab-players" class="admin-panel" data-panel="players">
+    <div class="admin-grid-2">
+      <div>
+        <h2>Players</h2>
+        <div id="players-list" class="admin-list"><div class="loading">Loading…</div></div>
+      </div>
+      <div>
+        <h2 id="player-form-title">Add Player</h2>
+        <form id="player-form" class="admin-form">
+          <input type="hidden" name="id">
+          <label>Name <span class="req">*</span><input type="text" name="name" required></label>
+          <label>Number<input type="text" name="number"></label>
+          <label>Position<input type="text" name="position"></label>
+          <label>Bio text<textarea name="bio_text" rows="4"></textarea></label>
+          <label>Photo URL<input type="text" name="photo_url" placeholder="https://… or upload below"></label>
+          <label class="admin-checkbox"><input type="checkbox" name="is_main_player"> Featured on Players page (bio)</label>
+          <div class="admin-form-actions">
+            <button class="btn" type="submit">Save Player</button>
+            <button class="btn secondary" type="button" id="player-form-cancel">Cancel edit</button>
+          </div>
+        </form>
+
+        <div class="admin-subcard" id="player-photo-card" hidden>
+          <h3>Photo upload</h3>
+          <p class="muted">Saves the player first, then upload a photo for them.</p>
+          <input type="file" id="player-photo-file" accept="image/png,image/jpeg,image/webp,image/gif">
+          <button class="btn secondary sm" type="button" id="player-photo-upload">Upload photo</button>
+          <div id="player-photo-result" class="muted"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ---- Rosters ---- -->
+  <section id="tab-rosters" class="admin-panel" data-panel="rosters" hidden>
+    <h2>Season Rosters</h2>
+    <label class="admin-inline">Season
+      <select id="roster-season-select"></select>
+    </label>
+    <p class="muted">Check a player to add them to this season's roster; uncheck to remove.</p>
+    <div id="roster-list" class="admin-list"><div class="loading">Loading…</div></div>
+  </section>
+
+  <!-- ---- Seasons & Leagues ---- -->
+  <section id="tab-seasons" class="admin-panel" data-panel="seasons" hidden>
+    <div class="admin-grid-2">
+      <div>
+        <h2>Seasons</h2>
+        <div id="seasons-list" class="admin-list"><div class="loading">Loading…</div></div>
+      </div>
+      <div>
+        <h2 id="season-form-title">Add Season</h2>
+        <form id="season-form" class="admin-form">
+          <input type="hidden" name="id">
+          <label>Name <span class="req">*</span><input type="text" name="name" required placeholder="Fall 2026 Arlington Heights"></label>
+          <label>Start date<input type="date" name="start_date"></label>
+          <label>End date<input type="date" name="end_date"></label>
+          <label>Sort order<input type="number" name="sort_order" placeholder="higher = more recent"></label>
+          <div class="admin-form-row">
+            <label>Final wins<input type="number" name="final_wins"></label>
+            <label>Final losses<input type="number" name="final_losses"></label>
+            <label>Final ties<input type="number" name="final_ties"></label>
+          </div>
+          <label>Playoff result<input type="text" name="playoff_result" placeholder="e.g. Lost Top 5 Semifinal"></label>
+          <div class="admin-form-actions">
+            <button class="btn" type="submit">Save Season</button>
+            <button class="btn secondary" type="button" id="season-form-cancel">Cancel edit</button>
+          </div>
+        </form>
+
+        <div class="admin-subcard" id="snapshot-card" hidden>
+          <h3>Season-close snapshot</h3>
+          <p class="muted">Best-effort scrape of final record + playoff result from QuickScores. Review and edit before saving — nothing is auto-saved.</p>
+          <button class="btn secondary sm" type="button" id="snapshot-run">Scrape snapshot</button>
+          <div id="snapshot-result"></div>
+        </div>
+
+        <div class="admin-subcard">
+          <h3 id="leagues-title">Leagues for this season</h3>
+          <div id="leagues-list" class="admin-list"><p class="muted">Select a season above.</p></div>
+          <form id="league-form" class="admin-form admin-form-row" hidden>
+            <input type="hidden" name="id">
+            <input type="hidden" name="season_id">
+            <label>Label <span class="req">*</span><input type="text" name="league_label" placeholder="Wednesday" required></label>
+            <label>QS OrgDir<input type="text" name="quickscores_org_dir" placeholder="ahpd"></label>
+            <label>QS LeagueID<input type="text" name="quickscores_league_id"></label>
+            <label>QS TeamID<input type="text" name="quickscores_team_id"></label>
+            <div class="admin-form-actions">
+              <button class="btn sm" type="submit">Save League</button>
+              <button class="btn secondary sm" type="button" id="league-form-cancel">Cancel</button>
+            </div>
+          </form>
+          <button class="btn secondary sm" type="button" id="league-add-btn" hidden>+ Add League</button>
+        </div>
+
+        <div class="admin-subcard">
+          <h3>Sync Now</h3>
+          <p class="muted">Fetches each league's QuickScores results page for the selected season, parses games, and upserts them by date + opponent.</p>
+          <button class="btn secondary sm" type="button" id="sync-run" disabled>Sync Now</button>
+          <div id="sync-result"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ---- Games ---- -->
+  <section id="tab-games" class="admin-panel" data-panel="games" hidden>
+    <div class="admin-grid-2">
+      <div>
+        <h2>Games</h2>
+        <label class="admin-inline">Season
+          <select id="games-season-select"></select>
+        </label>
+        <div id="games-list" class="admin-list"><div class="loading">Loading…</div></div>
+      </div>
+      <div>
+        <h2 id="game-form-title">Add Game</h2>
+        <form id="game-form" class="admin-form">
+          <input type="hidden" name="id">
+          <label>League <span class="req">*</span>
+            <select name="season_league_id" required></select>
+          </label>
+          <label>Date<input type="date" name="date"></label>
+          <label>Time<input type="text" name="time" placeholder="7:00 PM"></label>
+          <label>Field<input type="text" name="field" placeholder="Melas Park 3"></label>
+          <label>Opponent<input type="text" name="opponent"></label>
+          <div class="admin-form-row">
+            <label>Our score<input type="number" name="our_score"></label>
+            <label>Opp score<input type="number" name="opp_score"></label>
+          </div>
+          <label>Status
+            <select name="status">
+              <option value="scheduled">scheduled</option>
+              <option value="final">final</option>
+            </select>
+          </label>
+          <div class="admin-form-actions">
+            <button class="btn" type="submit">Save Game</button>
+            <button class="btn secondary" type="button" id="game-form-cancel">Cancel edit</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <!-- ---- Enter Game Stats ---- -->
+  <section id="tab-stats" class="admin-panel" data-panel="stats" hidden>
+    <h2>Enter Game Stats</h2>
+    <label class="admin-inline">Season
+      <select id="stats-season-select"></select>
+    </label>
+    <label class="admin-inline">Game
+      <select id="stats-game-select"></select>
+    </label>
+    <div id="stats-grid-wrap"><p class="muted">Pick a season and game to enter stats.</p></div>
+  </section>
+</main>
+
+<script type="module" src="/admin/admin.js"></script>
+</body>
+</html>

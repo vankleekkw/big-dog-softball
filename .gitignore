@@ -7,9 +7,11 @@ dist/
 *.db
 .venv/
 __pycache__/
+scrape/careers.json
 
-# Local seed SQL generated from the scrape (not committed; regenerated as needed)
-seed/seed.generated.sql
+# NOTE: seed/seed.generated.sql IS committed on purpose — it's the durable
+# historical record (SPS is unstable and could disappear), regenerable via
+# scrape/build_seed.py.
 
 # Env / secrets
 .dev.vars
@@ -17,3 +19,4 @@ seed/seed.generated.sql
 
 # OS
 .DS_Store
+scratch_fixture.sql
