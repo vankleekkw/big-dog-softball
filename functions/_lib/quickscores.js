@@ -156,6 +156,16 @@ export function parseBracket(html, teamMatch = "big dog") {
   }
 
   const maxNum = Math.max(0, ...Object.values(games).map((g) => g.num || 0));
+  // QuickScores numbers bracket games 1..N in round order (final = N), so the
+  // round follows from the game number: final, then 2 semis, then 4 quarters, …
+  const roundName = (num) => {
+    if (!num || !maxNum) return "Playoff";
+    if (num === maxNum) return "Championship";
+    if (num >= maxNum - 2) return "Semifinal";
+    if (num >= maxNum - 6) return "Quarterfinal";
+    if (num >= maxNum - 14) return "Round of 16";
+    return "Playoff";
+  };
   const out = [];
   for (const gid of Object.keys(games)) {
     const ts = (teams[gid] || []).filter((t) => t.name);
@@ -167,7 +177,7 @@ export function parseBracket(html, teamMatch = "big dog") {
       date: g.date, time: g.time, field: g.field, opponent: opp.name,
       our_score: bd.score, opp_score: opp.score, status: "final",
       is_playoff: 1,
-      playoff_round: g.num && g.num === maxNum ? "Championship" : "Playoff",
+      playoff_round: roundName(g.num),
     });
   }
 

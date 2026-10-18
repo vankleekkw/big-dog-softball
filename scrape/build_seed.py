@@ -372,6 +372,20 @@ def qs_league_info(league_id):
             teams.setdefault(tm.group(1), []).append(
                 {"name": tname, "score": int(sm.group(1)) if sm else None})
         maxnum = max([m2["num"] or 0 for m2 in meta.values()] + [0])
+
+        def round_name(num):
+            if not num or not maxnum:
+                return "Playoff"
+            if num == maxnum:
+                return "Championship"
+            if num >= maxnum - 2:
+                return "Semifinal"
+            if num >= maxnum - 6:
+                return "Quarterfinal"
+            if num >= maxnum - 14:
+                return "Round of 16"
+            return "Playoff"
+
         for gid, g in meta.items():
             ts = [t for t in teams.get(gid, []) if t["name"]]
             bd = next((t for t in ts if "big dog" in t["name"].lower()), None)
@@ -381,7 +395,7 @@ def qs_league_info(league_id):
             games.append({
                 "date": g["date"], "time": g["time"], "field": g["field"],
                 "opponent": opp["name"], "our_score": bd["score"], "opp_score": opp["score"],
-                "playoff_round": "Championship" if g["num"] and g["num"] == maxnum else "Playoff",
+                "playoff_round": round_name(g["num"]),
             })
         pm = re.search(r'<td[^>]*>(Champion|\d+(?:st|nd|rd|th))</td>\s*<td[^>]*>([^<]+)</td>', html)
         # find OUR placement
