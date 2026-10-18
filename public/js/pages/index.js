@@ -51,14 +51,30 @@ function thisSeason(games, seasonName) {
   const finals = games.filter((g) => g.status === "final");
   const recent = finals.slice(-4).reverse();
   const upcoming = games.filter((g) => g.status !== "final").slice(0, 3);
-  const col = (title, list) => list.length
-    ? `<div class="card"><h3>${title}</h3><ul class="game-list">${list.map(gameLine).join("")}</ul></div>`
-    : "";
+  const col = (title, list, emptyText) => `<div class="card"><h3>${title}</h3>${
+    list.length
+      ? `<ul class="game-list">${list.map(gameLine).join("")}</ul>`
+      : `<p class="muted">${esc(emptyText)}</p>`
+  }</div>`;
   return `
     <h2 style="margin-top:24px">This Season${seasonName ? ` · ${esc(seasonName)}` : ""}</h2>
     <section class="card-grid">
-      ${col("Recent Results", recent)}
-      ${col("Upcoming", upcoming)}
+      ${col("Recent Results", recent, "No completed games yet.")}
+      ${col("Upcoming", upcoming, "Season's a wrap — see you next year.")}
+    </section>`;
+}
+
+function highlightSection(photo, seasonId) {
+  if (!photo || !photo.photo_url) return "";
+  const cap = photo.photo_caption || photo.playoff_round || "Season highlight";
+  return `
+    <section class="game-photos" style="margin-top:var(--gap);max-width:480px">
+      <figure class="game-photo">
+        <a href="/season.html?id=${encodeURIComponent(seasonId)}">
+          <img src="${esc(photo.photo_url)}" alt="${esc(cap)}" loading="lazy">
+        </a>
+        <figcaption>${esc(cap)}</figcaption>
+      </figure>
     </section>`;
 }
 
@@ -83,6 +99,7 @@ function bottomCards(career) {
 function render(data, games) {
   app.innerHTML = `
     ${heroSection(data)}
+    ${data.season ? highlightSection(data.highlightPhoto, data.season.id) : ""}
     ${thisSeason(games, data.season ? data.season.name : "")}
     ${bottomCards(data.career)}
   `;

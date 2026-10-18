@@ -60,6 +60,19 @@ export async function onRequestGet({ env }) {
 
     const career = await getCareerRecord(db);
 
+    const highlightRow = await db
+      .prepare(
+        `SELECT g.photo_url, g.photo_caption, g.playoff_round
+         FROM games g JOIN season_leagues sl ON sl.id = g.season_league_id
+         WHERE sl.season_id = ? AND g.photo_url IS NOT NULL
+         ORDER BY g.date DESC, g.id DESC LIMIT 1`
+      )
+      .bind(season.id)
+      .first();
+    const highlightPhoto = highlightRow
+      ? { photo_url: highlightRow.photo_url, photo_caption: highlightRow.photo_caption, playoff_round: highlightRow.playoff_round }
+      : null;
+
     return json({
       season: {
         id: season.id, name: season.name, is_active: season.is_active,
@@ -69,6 +82,7 @@ export async function onRequestGet({ env }) {
       nextGame,
       lastGame,
       career,
+      highlightPhoto,
     });
   } catch (err) {
     return serverError(err);
