@@ -227,12 +227,40 @@ table.stats th.sort-desc::after { content: "\2193"; opacity: 1; color: var(--acc
 
 /* ---- Mobile hardening ---- */
 input, select, textarea, button { font-size: 16px; } /* iOS: <16px triggers zoom */
-@media (max-width: 560px) {
-  h1 { font-size: 1.6rem; }
-  .nav { gap: 8px; padding: 8px 12px; }
-  .nav .brand { font-size: .85rem; }
-  .nav .links a { padding: 6px 8px; font-size: .82rem; }
-  .hero { gap: 16px; }
+
+/* Phone: a true vertical layout, not a shrunk desktop. (Multi-column grids
+   already reflow fluidly via auto-fit/auto-fill at tablet widths.) */
+@media (max-width: 640px) {
+  .container { padding: 0 14px; }
+  .section { padding: 18px 0; }
+  h1 { font-size: 1.65rem; margin-bottom: .4em; }
+  h2 { font-size: 1.25rem; }
+  .nav { gap: 10px; padding: 8px 12px; }
+  .nav .brand { font-size: .9rem; }
+
+  /* Hero stacks & centers like a mobile header; record is the focal point. */
+  .hero { flex-direction: column; text-align: center; gap: 12px; padding: 16px 0; }
+  .hero-logo { width: 92px; height: 92px; }
+  .hero-main { width: 100%; min-width: 0; }
+  .hero-record { justify-content: center; }
+  .hero-record .num { font-size: 2.9rem; }
+  .next-game { display: block; }
+  .champ-badge { display: block; }
+
+  /* One column for card grids; 2-up stat tiles so they stay legible. */
+  .card-grid { grid-template-columns: 1fr; }
+  .stat-row { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  .stat-tile { padding: 12px; }
+  .stat-tile .value { font-size: 1.6rem; }
+
+  /* Stat tables keep every column (no cards) but tighten up; first column
+     stays pinned and the sideways scroll reads as intentional. */
+  table.stats { font-size: .82rem; }
+  table.stats th, table.stats td { padding: 7px 8px; }
+
+  .season-picker { width: 100%; }
+  .season-picker select { flex: 1; }
+  .site-footer .flag { height: 36px; width: 54px; }
 }
 
 /* ========================================================================
