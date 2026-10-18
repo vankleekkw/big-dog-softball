@@ -79,7 +79,7 @@ function buildHallOfFame(seasons) {
 function render(seasons) {
   const rows = seasons.map((s) => `
     <tr>
-      <td>${esc(s.name)}</td>
+      <td><a href="/season.html?id=${encodeURIComponent(s.id)}">${esc(s.name)}</a></td>
       <td>${fmtRecordRow(s)}</td>
       <td>${esc(s.playoff_result || "—")}</td>
     </tr>

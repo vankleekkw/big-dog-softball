@@ -94,7 +94,7 @@
         <h2 id="season-form-title">Add Season</h2>
         <form id="season-form" class="admin-form">
           <input type="hidden" name="id">
-          <label>Name <span class="req">*</span><input type="text" name="name" required placeholder="Fall 2026 Arlington Heights"></label>
+          <label>Name <span class="req">*</span><input type="text" name="name" required placeholder="Fall 2026 Chicagoland"></label>
           <label>Start date<input type="date" name="start_date"></label>
           <label>End date<input type="date" name="end_date"></label>
           <label>Sort order<input type="number" name="sort_order" placeholder="higher = more recent"></label>
@@ -104,6 +104,8 @@
             <label>Final ties<input type="number" name="final_ties"></label>
           </div>
           <label>Playoff result<input type="text" name="playoff_result" placeholder="e.g. Lost Top 5 Semifinal"></label>
+          <label>Team photo URL<input type="text" name="photo_url" placeholder="https://… team photo for this season"></label>
+          <label>Highlights / recap<textarea name="recap" rows="4" placeholder="A few lines of season highlights, shown on the season page."></textarea></label>
           <div class="admin-form-actions">
             <button class="btn" type="submit">Save Season</button>
             <button class="btn secondary" type="button" id="season-form-cancel">Cancel edit</button>

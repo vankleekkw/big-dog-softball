@@ -49,7 +49,7 @@ function render(data) {
   const careerHtml = `<div class="card">
       <h3>All-Time Record</h3>
       <p class="hero-record"><span class="num">${fmtRecord(career)}</span></p>
-      <p class="muted">46 seasons deep at Arlington Heights Park District. We keep showing up.</p>
+      <p class="muted">46 seasons deep across Chicagoland. We keep showing up.</p>
     </div>`;
 
   const blurbHtml = `<div class="card">

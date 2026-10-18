@@ -67,7 +67,10 @@ h2 { font-size: clamp(1.3rem, 3.5vw, 1.8rem); }
 }
 .nav .brand { display: flex; align-items: center; gap: 10px; font-family: var(--font-head);
   text-transform: uppercase; color: var(--text); font-size: 1rem; }
-.nav .brand img { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; }
+/* Logo is a circular badge on a white square — contain it on a white chip so the
+   whole badge shows, centered, rather than cropping it off-center. */
+.nav .brand img { width: 40px; height: 40px; border-radius: 50%; object-fit: contain;
+  background: #fff; padding: 2px; }
 .nav .links { display: flex; gap: 4px; margin-left: auto; flex-wrap: wrap; }
 .nav .links a {
   color: var(--text-muted); padding: 6px 10px; border-radius: var(--radius-sm);
@@ -132,8 +135,8 @@ table.stats tfoot td { border-top: 2px solid var(--border); font-weight: 700; }
   display: flex; align-items: center; gap: 24px; flex-wrap: wrap;
   padding: 24px 0;
 }
-.hero-logo { width: 110px; height: 110px; border-radius: 50%; object-fit: cover;
-  border: 3px solid var(--accent); flex-shrink: 0; }
+.hero-logo { width: 120px; height: 120px; border-radius: 50%; object-fit: contain;
+  background: #fff; padding: 6px; border: 3px solid var(--accent); flex-shrink: 0; }
 .hero-main { flex: 1; min-width: 220px; }
 .hero-season { text-transform: uppercase; font-size: .8rem; letter-spacing: .05em; margin-bottom: 4px; }
 .hero-record { display: flex; align-items: baseline; gap: 10px; margin: 0 0 14px; }
@@ -170,5 +173,48 @@ table.stats tfoot td { border-top: 2px solid var(--border); font-weight: 700; }
 .bio-info { flex: 1; min-width: 220px; }
 
 /* ---- Footer ---- */
-.site-footer { border-top: 1px solid var(--border); margin-top: 40px; padding: 24px 0;
+.site-footer { border-top: 1px solid var(--border); margin-top: 40px;
+  padding: 24px 0 calc(24px + env(safe-area-inset-bottom));
   color: var(--text-muted); font-size: .85rem; text-align: center; }
+.site-footer .flags { display: flex; gap: 10px; justify-content: center; margin-bottom: 10px; }
+.site-footer .flag { height: 22px; width: auto; border-radius: 3px;
+  border: 1px solid var(--border); box-shadow: 0 1px 3px rgba(0,0,0,.4); }
+
+/* ---- Back / subnav (in-app back nav, needed in standalone PWA mode) ---- */
+.subnav { padding: 10px 16px 0; }
+.back-btn { -webkit-appearance: none; appearance: none; cursor: pointer;
+  background: var(--ink-3); color: var(--text); border: 1px solid var(--border);
+  border-radius: 999px; padding: 8px 16px; font-size: .9rem; font-weight: 600;
+  min-height: 40px; }
+.back-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+/* ---- Sortable stat tables ---- */
+table.stats th.sortable { cursor: pointer; -webkit-user-select: none; user-select: none; }
+table.stats th.sortable:hover { color: var(--text); }
+table.stats th.sortable::after { content: "\2195"; opacity: .35; margin-left: 4px; font-size: .9em; }
+table.stats th.sort-asc::after { content: "\2191"; opacity: 1; color: var(--accent); }
+table.stats th.sort-desc::after { content: "\2193"; opacity: 1; color: var(--accent); }
+
+/* ---- Season selector ---- */
+.season-picker { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; }
+.season-picker select { -webkit-appearance: none; appearance: none; font-size: 16px;
+  background: var(--card); color: var(--text); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); padding: 10px 14px; min-height: 44px; }
+
+/* ---- Season detail ---- */
+.season-hero { display: flex; gap: 20px; flex-wrap: wrap; align-items: flex-start; margin-bottom: 8px; }
+.season-photo { border-radius: var(--radius); max-width: 320px; width: 100%; border: 1px solid var(--border); }
+.season-recap { white-space: pre-wrap; }
+
+/* ---- Header safe-area (notch) ---- */
+.site-header { padding-top: env(safe-area-inset-top); }
+
+/* ---- Mobile hardening ---- */
+input, select, textarea, button { font-size: 16px; } /* iOS: <16px triggers zoom */
+@media (max-width: 560px) {
+  h1 { font-size: 1.6rem; }
+  .nav { gap: 8px; padding: 8px 12px; }
+  .nav .brand { font-size: .85rem; }
+  .nav .links a { padding: 6px 8px; font-size: .82rem; }
+  .hero { gap: 16px; }
+}

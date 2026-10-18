@@ -13,6 +13,8 @@ const WRITABLE_FIELDS = [
   "playoff_result",
   "sort_order",
   "sps_season_id",
+  "photo_url",
+  "recap",
 ];
 
 export async function onRequestPatch({ request, env, params }) {

@@ -1,7 +1,8 @@
 // /api/admin/seasons — GET list, POST create.
 import { json, badRequest, serverError } from "../../../_lib/http.js";
 
-const WRITABLE_FIELDS = ["name", "start_date", "end_date", "sort_order", "sps_season_id"];
+const WRITABLE_FIELDS = ["name", "start_date", "end_date", "sort_order", "sps_season_id",
+  "final_wins", "final_losses", "final_ties", "playoff_result", "photo_url", "recap"];
 
 export async function onRequestGet({ env }) {
   try {

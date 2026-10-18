@@ -331,6 +331,8 @@ function editSeason(id) {
   form.final_losses.value = s.final_losses ?? "";
   form.final_ties.value = s.final_ties ?? "";
   form.playoff_result.value = s.playoff_result || "";
+  form.photo_url.value = s.photo_url || "";
+  form.recap.value = s.recap || "";
   document.getElementById("season-form-title").textContent = `Edit ${s.name}`;
 }
 
@@ -354,6 +356,8 @@ async function onSeasonFormSubmit(e) {
     final_losses: numOrNull(form.final_losses.value),
     final_ties: numOrNull(form.final_ties.value),
     playoff_result: form.playoff_result.value.trim() || null,
+    photo_url: form.photo_url.value.trim() || null,
+    recap: form.recap.value.trim() || null,
   };
   try {
     if (id) await api(`/api/admin/seasons/${id}`, { method: "PATCH", body: JSON.stringify(payload) });
@@ -670,7 +674,8 @@ async function deleteGame(id) {
 
 // ---- Enter Game Stats tab --------------------------------------------------------
 
-const STAT_COLS = ["gp", "ab", "r", "h", "b1", "b2", "b3", "hr", "bb", "rbi", "so", "sac", "sb"];
+// Only stats our system actually tracks (RBI/SO/SAC/SB are not tracked).
+const STAT_COLS = ["gp", "ab", "r", "h", "b1", "b2", "b3", "hr", "bb"];
 let statsRosterIds = new Set();
 
 async function initStats() {

@@ -1,15 +1,17 @@
 import { mountChrome, api, setLoading } from "../common.js";
 import { fmtRate } from "../stats.js";
 
-mountChrome("players");
+mountChrome("players", { back: true });
 
 const app = document.getElementById("app");
 setLoading(app, "Pulling the card…");
 
 const RATE_KEYS = new Set(["avg", "slg", "obp", "ops"]);
+// Not tracked by our system — hidden from stat tables.
+const HIDDEN = new Set(["rbi", "so", "sac", "sb"]);
 const LABELS = {
-  gp: "GP", ab: "AB", r: "R", h: "H", hr: "HR", rbi: "RBI", bb: "BB",
-  sac: "SAC", b1: "1B", b2: "2B", b3: "3B", tb: "TB",
+  gp: "GP", ab: "AB", r: "R", h: "H", hr: "HR", bb: "BB",
+  b1: "1B", b2: "2B", b3: "3B", tb: "TB",
   avg: "AVG", slg: "SLG", obp: "OBP", ops: "OPS",
 };
 
@@ -50,8 +52,9 @@ function render(data) {
     ? `<p>${esc(p.bio_text)}</p>`
     : `<p class="muted edit-note">No bio on file yet. Editable: someone should ask this player three questions and a lie.</p>`;
 
-  // Derive the stat column order from career totals (pure stat keys, no identifiers).
-  const keys = Object.keys(career);
+  // Derive the stat column order from career totals (pure stat keys, no identifiers,
+  // excluding stats our system doesn't track).
+  const keys = Object.keys(career).filter((k) => !HIDDEN.has(k));
 
   const head = `<th>Season</th>` + keys.map((k) => `<th>${label(k)}</th>`).join("");
   const rows = seasons.map((s) => {
