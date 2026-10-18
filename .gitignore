@@ -20,3 +20,4 @@ scrape/careers.json
 # OS
 .DS_Store
 scratch_fixture.sql
+Photos/

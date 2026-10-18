@@ -81,7 +81,9 @@ CREATE TABLE games (
   opp_score        INTEGER,
   status           TEXT DEFAULT 'scheduled',  -- 'scheduled' | 'final'
   is_playoff       INTEGER NOT NULL DEFAULT 0,
-  playoff_round    TEXT                        -- e.g. "Quarterfinal", "Championship"
+  playoff_round    TEXT,                       -- e.g. "Quarterfinal", "Championship"
+  photo_url        TEXT,                       -- optional game/highlight photo
+  photo_caption    TEXT
 );
 CREATE INDEX idx_games_season_league ON games(season_league_id);
 

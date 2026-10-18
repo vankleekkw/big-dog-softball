@@ -27,7 +27,7 @@ export async function onRequestGet({ request, env }) {
       .prepare(
         `SELECT g.id, g.season_league_id, g.date, g.time, g.field, g.opponent,
                 g.our_score, g.opp_score, g.status, g.is_playoff, g.playoff_round,
-                sl.league_label
+                g.photo_url, g.photo_caption, sl.league_label
          FROM games g JOIN season_leagues sl ON sl.id = g.season_league_id
          WHERE sl.season_id = ?
          ORDER BY g.is_playoff ASC, g.date ASC, g.id ASC`
@@ -48,6 +48,8 @@ export async function onRequestGet({ request, env }) {
       status: g.status,
       is_playoff: !!g.is_playoff,
       playoff_round: g.playoff_round,
+      photo_url: g.photo_url,
+      photo_caption: g.photo_caption,
       result: deriveResult(g),
     }));
 

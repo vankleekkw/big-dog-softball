@@ -326,3 +326,12 @@ table.stats thead th { box-shadow: inset 0 -2px 0 rgba(242,106,33,.45); }
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%231a1205' stroke-width='2' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
   background-repeat: no-repeat; background-position: right 12px center;
 }
+
+/* ---- Game/season highlight photos (e.g. championship run) ---- */
+.game-photos { display: grid; gap: var(--gap); margin: 14px 0 8px;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+.game-photo { margin: 0; }
+.game-photo img { width: 100%; border-radius: var(--radius); border: 1px solid var(--border);
+  box-shadow: 0 3px 14px rgba(0,0,0,.45); }
+.game-photo figcaption { margin-top: 6px; font-size: .85rem; color: var(--text-muted);
+  font-weight: 700; text-align: center; }

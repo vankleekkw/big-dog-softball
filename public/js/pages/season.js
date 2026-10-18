@@ -46,6 +46,16 @@ function leagueSection(league, games) {
   if (regular.length) html += table(["Date", "Opponent", "Field", "Score", "Result"], regular.map((g) => gameRow(g, false)).join(""));
   if (playoff.length) html += `<h3 style="margin-top:4px">Playoffs</h3>` +
     table(["Date", "Round", "Opponent", "Field", "Score", "Result"], playoff.map((g) => gameRow(g, true)).join(""));
+  const photos = playoff.filter((g) => g.photo_url);
+  if (photos.length) {
+    html += `<div class="game-photos">` + photos.map((g) => {
+      const cap = g.photo_caption || `${g.playoff_round || "Playoff"} vs ${g.opponent}`;
+      const score = g.status === "final" ? ` · ${esc(g.our_score)}–${esc(g.opp_score)} ${esc(g.result || "")}` : "";
+      return `<figure class="game-photo">
+        <img src="${esc(g.photo_url)}" alt="${esc(cap)}" loading="lazy">
+        <figcaption>${esc(cap)}${score}</figcaption></figure>`;
+    }).join("") + `</div>`;
+  }
   return html;
 }
 
