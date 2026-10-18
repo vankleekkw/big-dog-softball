@@ -61,7 +61,10 @@ export async function onRequestGet({ env }) {
     const career = await getCareerRecord(db);
 
     return json({
-      season: { id: season.id, name: season.name, is_active: season.is_active },
+      season: {
+        id: season.id, name: season.name, is_active: season.is_active,
+        playoff_result: season.playoff_result,
+      },
       record,
       nextGame,
       lastGame,

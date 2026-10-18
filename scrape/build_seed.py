@@ -568,6 +568,16 @@ def build_seed(data, pid_to_uid, out_path):
             qs_playoff[sps_id] = " · ".join(champs)
             print(f"  QuickScores playoff: season {sps_id} -> {qs_playoff[sps_id]}")
 
+    # Active season playoff (QuickScores) — its leagues are hand-built.
+    active_champs = []
+    for night, _org, qlid, _tid in ACTIVE_SEASON["leagues"]:
+        champ = scrape_qs_champion(qlid)
+        if champ and "Big Dog" in champ:
+            active_champs.append(f"{night} League Champions")
+    active_playoff = " · ".join(active_champs) if active_champs else None
+    if active_playoff:
+        print(f"  QuickScores playoff: active season -> {active_playoff}")
+
     # seasons (oldest id first) + active
     season_id = {}
     season_rows = []
@@ -579,8 +589,8 @@ def build_seed(data, pid_to_uid, out_path):
             f"{sqlint(rec.get('t'))}, {sqlstr(qs_playoff.get(sid))}, 0, {sort_order[sid]}, {sid})")
     active_id = n_hist + 1
     season_rows.append(
-        f"({active_id}, {sqlstr(ACTIVE_SEASON['name'])}, NULL, NULL, NULL, NULL, NULL, NULL, "
-        f"1, {n_hist + 1}, {ACTIVE_SEASON['sps_season_id']})")
+        f"({active_id}, {sqlstr(ACTIVE_SEASON['name'])}, NULL, NULL, NULL, NULL, NULL, "
+        f"{sqlstr(active_playoff)}, 1, {n_hist + 1}, {ACTIVE_SEASON['sps_season_id']})")
 
     # season_leagues: for seasons wired to QuickScores, real Wed/Fri leagues with
     # the QS ids; otherwise one synthetic league. Plus the active season's two.
