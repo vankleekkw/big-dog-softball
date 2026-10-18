@@ -14,23 +14,20 @@ function fmtRecordRow(s) {
 
 function render(seasons, copy) {
   const rows = seasons.map((s) => `
-    <tr>
-      <td><a href="/season.html?id=${encodeURIComponent(s.id)}">${esc(s.name)}</a></td>
-      <td>${fmtRecordRow(s)}</td>
-      <td>${esc(s.playoff_result || "—")}</td>
-    </tr>
+    <a class="history-row" href="/season.html?id=${encodeURIComponent(s.id)}">
+      <span class="season-name">${esc(s.name)}</span>
+      <span class="season-meta">
+        ${s.playoff_result ? `<span class="pill w">🏆 ${esc(s.playoff_result)}</span>` : ""}
+        <span class="record">${fmtRecordRow(s)}</span>
+      </span>
+    </a>
   `).join("");
 
   app.innerHTML = `
     <h1>History</h1>
     <p>${esc(copy.history_intro || FALLBACK_INTRO)}</p>
 
-    ${seasons.length ? `<div class="table-wrap" style="margin:20px 0">
-      <table class="stats">
-        <thead><tr><th>Season</th><th>Record</th><th>Playoff Result</th></tr></thead>
-        <tbody>${rows}</tbody>
-      </table>
-    </div>` : `<div class="card center"><p class="muted">No completed seasons on file yet.</p></div>`}
+    ${seasons.length ? `<div class="history-list">${rows}</div>` : `<div class="card center"><p class="muted">No completed seasons on file yet.</p></div>`}
   `;
 }
 

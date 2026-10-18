@@ -157,6 +157,18 @@ table.stats tfoot td { border-top: 2px solid var(--border); font-weight: 700; }
   background: rgba(242,106,33,.15); border: 1px solid var(--accent); border-radius: 999px;
   color: var(--accent); font-weight: 700; font-size: .95rem; }
 
+/* ---- History list (seasons) ---- */
+.history-list { display: flex; flex-direction: column; gap: 8px; margin: 20px 0; }
+.history-row {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+  background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 12px 16px; color: var(--text);
+}
+.history-row:hover { border-color: rgba(242,106,33,.45); text-decoration: none; }
+.history-row .season-name { font-weight: 700; }
+.history-row .season-meta { display: flex; align-items: center; gap: 10px; }
+.history-row .record { font-variant-numeric: tabular-nums; color: var(--text-muted); font-weight: 600; }
+
 /* ---- Editable placeholder marker ---- */
 .edit-note { font-style: italic; color: var(--text-muted); font-size: .85rem;
   border-left: 2px dashed var(--border); padding-left: 10px; margin: 8px 0; }

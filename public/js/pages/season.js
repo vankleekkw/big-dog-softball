@@ -23,7 +23,7 @@ function gameRow(g, withRound) {
   const result = g.status === "final" ? resultPill(g.result) : `<span class="muted">Scheduled</span>`;
   const roundCell = withRound ? `<td>${esc(g.playoff_round || "Playoff")}</td>` : "";
   return `<tr><td>${fmtDate(g.date)}</td>${roundCell}<td>${esc(g.opponent || "—")}</td>
-    <td>${esc(g.field || "—")}</td><td>${score}</td><td>${result}</td></tr>`;
+    <td>${score}</td><td>${result}</td><td>${esc(g.field || "—")}</td></tr>`;
 }
 
 function table(headCols, rows) {
@@ -43,9 +43,9 @@ function leagueSection(league, games) {
   const finish = league.playoff_result
     ? `<span class="pill w" style="margin-left:8px">🏆 ${esc(league.playoff_result)}</span>` : "";
   let html = `<h2>${heading}${finish}</h2>`;
-  if (regular.length) html += table(["Date", "Opponent", "Field", "Score", "Result"], regular.map((g) => gameRow(g, false)).join(""));
+  if (regular.length) html += table(["Date", "Opponent", "Score", "Result", "Field"], regular.map((g) => gameRow(g, false)).join(""));
   if (playoff.length) html += `<h3 style="margin-top:4px">Playoffs</h3>` +
-    table(["Date", "Round", "Opponent", "Field", "Score", "Result"], playoff.map((g) => gameRow(g, true)).join(""));
+    table(["Date", "Round", "Opponent", "Score", "Result", "Field"], playoff.map((g) => gameRow(g, true)).join(""));
   const photos = playoff.filter((g) => g.photo_url);
   if (photos.length) {
     html += `<div class="game-photos">` + photos.map((g) => {

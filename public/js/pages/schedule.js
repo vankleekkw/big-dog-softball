@@ -23,7 +23,7 @@ function gameRow(g, withRound) {
   const roundCell = withRound ? `<td>${esc(g.playoff_round || "Playoff")}</td>` : "";
   return `<tr>
       <td>${fmtDate(g.date)}</td>${roundCell}<td>${esc(g.opponent || "—")}</td>
-      <td>${esc(g.field || "—")}</td><td>${score}</td><td>${result}</td>
+      <td>${score}</td><td>${result}</td><td>${esc(g.field || "—")}</td>
     </tr>`;
 }
 
@@ -48,12 +48,12 @@ function leagueSection(league, games) {
 
   let html = `<h2>${heading}${finish}</h2>`;
   if (regular.length) {
-    html += table(["Date", "Opponent", "Field", "Score", "Result"],
+    html += table(["Date", "Opponent", "Score", "Result", "Field"],
       regular.map((g) => gameRow(g, false)).join(""));
   }
   if (playoff.length) {
     html += `<h3 style="margin-top:4px">Playoffs</h3>` +
-      table(["Date", "Round", "Opponent", "Field", "Score", "Result"],
+      table(["Date", "Round", "Opponent", "Score", "Result", "Field"],
         playoff.map((g) => gameRow(g, true)).join(""));
   }
   return html;
