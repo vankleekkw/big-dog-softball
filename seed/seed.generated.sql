@@ -215,7 +215,7 @@ INSERT INTO seasons (id, name, start_date, end_date, final_wins, final_losses, f
 (43, '2025 Summer AHeights', NULL, NULL, 11, 11, 0, NULL, 0, 43, 20926),
 (44, '2025 Fall AHeights', NULL, NULL, 15, 7, 0, NULL, 0, 44, 21002),
 (45, '2026 Summer AHeights', NULL, NULL, 13, 9, 0, NULL, 0, 45, 21182),
-(46, 'Fall 2026 Chicagoland', NULL, NULL, NULL, NULL, NULL, 'Wednesday Rec 3 Champions', 1, 46, 21416);
+(46, '2026 Fall Arlington Heights', NULL, NULL, NULL, NULL, NULL, 'Wednesday Rec 3 Champions', 1, 46, 21416);
 
 INSERT INTO season_leagues (id, season_id, league_label, quickscores_org_dir, quickscores_league_id, quickscores_team_id, playoff_result) VALUES
 (1, 1, 'League', NULL, NULL, NULL, NULL),

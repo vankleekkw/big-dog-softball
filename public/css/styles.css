@@ -287,12 +287,4 @@ table.stats thead th { box-shadow: inset 0 -2px 0 rgba(242,106,33,.45); }
 /* Result pills get a touch more presence. */
 .pill { box-shadow: inset 0 0 0 1px rgba(255,255,255,.05); }
 
-/* Ghost tribal flames along the left & right spines — faint, fixed, tiled down
-   the edge behind content. */
-body::before, body::after {
-  content: ""; position: fixed; top: 0; bottom: 0; z-index: -1; pointer-events: none;
-  width: clamp(40px, 6vw, 78px); opacity: .16;
-  background: url(/assets/flames-spine.svg) top left / 100% auto repeat-y;
-}
-body::before { left: 0; }
-body::after  { right: 0; transform: scaleX(-1); }
+/* (Spine flame treatment removed — to be replaced with an asset later.) */

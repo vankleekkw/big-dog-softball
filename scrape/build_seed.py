@@ -64,7 +64,7 @@ MAIN_PLAYER_AB_THRESHOLD = 100
 SEASON_PREFIX = "Big Dog Gotta Eat/"
 
 ACTIVE_SEASON = {
-    "name": "Fall 2026 Chicagoland",
+    "name": "2026 Fall Arlington Heights",
     "sps_season_id": CURRENT_SEASON_SPS_ID,
     "leagues": [
         ("Wednesday", "ahpd", "1740394", "15275022"),
