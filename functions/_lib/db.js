@@ -204,7 +204,7 @@ export async function getSeasonRecord(db, seasonId) {
     .prepare(
       `SELECT g.our_score, g.opp_score
        FROM games g JOIN season_leagues sl ON sl.id = g.season_league_id
-       WHERE sl.season_id = ? AND g.status = 'final'`
+       WHERE sl.season_id = ? AND g.status = 'final' AND g.is_playoff = 0`
     )
     .bind(seasonId)
     .all();

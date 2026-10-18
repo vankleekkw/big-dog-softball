@@ -99,6 +99,89 @@ export function parseResultsPage(html, teamMatch = "big dog") {
   return games;
 }
 
+// League display name from the page <h1>, e.g. "Wednesday Rec 3".
+export function parseLeagueName(html) {
+  const m = html.match(/<h1>([^<]+)<\/h1>/);
+  return m ? decodeEntities(m[1]) : null;
+}
+
+function bracketDateToISO(s) {
+  const m = (s || "").match(/(\d{1,2})\/(\d{1,2})\/(\d{2,4})/);
+  if (!m) return null;
+  let y = m[3];
+  if (y.length === 2) y = "20" + y;
+  return `${y}-${String(+m[1]).padStart(2, "0")}-${String(+m[2]).padStart(2, "0")}`;
+}
+
+// Parse the <table id="TournamentBracket"> playoff bracket. The bracket is keyed
+// by game id: `Game_<gid>` holds meta (Game #, date, time, field), and the two
+// `*Team_<gid>` cells hold "[seed] TeamName" + score. Returns
+// { games:[{date,time,field,opponent,our_score,opp_score,status,is_playoff,
+// playoff_round}], placement } for the team. placement is "Champion"/"2nd"/...
+export function parseBracket(html, teamMatch = "big dog") {
+  const needle = teamMatch.toLowerCase();
+  // The bracket is a deeply-nested table, so isolating it by a single
+  // <table>…</table> match truncates it. The Game_/*Team_ anchor ids and the
+  // paddingLeft10 score spans are bracket-unique, so parse off the whole doc,
+  // gated on the bracket existing at all.
+  if (!/id="TournamentBracket"/.test(html)) return { games: [], placement: null };
+  const tb = html;
+
+  // Game meta.
+  const games = {};
+  let m;
+  const gameRe = /id="Game_(\d+)"[^>]*>([\s\S]{0,500}?)<\/div>/g;
+  while ((m = gameRe.exec(tb))) {
+    const ps = [...m[2].matchAll(/<p[^>]*>([\s\S]*?)<\/p>/g)]
+      .map((x) => decodeEntities(x[1].replace(/<[^>]+>/g, " ")).replace(/\s+/g, " ").trim());
+    const numM = (ps[0] || "").match(/Game\s+(\d+)/i);
+    games[m[1]] = {
+      num: numM ? Number(numM[1]) : null,
+      date: bracketDateToISO(ps[1]),
+      time: (ps[2] || "").trim() || null,
+      field: (ps[3] || "").trim() || null,
+    };
+  }
+
+  // Team cells (ids like HomeTeam_/AwayTeam_/VisitorTeam_). Two per game.
+  const teams = {};
+  const teamRe = /id="\w*Team_(\d+)"[^>]*>([\s\S]{0,300}?)<\/div>/g;
+  while ((m = teamRe.exec(tb))) {
+    const nameM = m[2].match(/<span class="notranslate">([^<]*)<\/span>/);
+    if (!nameM) continue;
+    const name = decodeEntities(nameM[1]).replace(/^\[\d+\]\s*/, "").trim();
+    if (!name) continue;
+    const scoreM = m[2].match(/<span class="paddingLeft10">(\d+)<\/span>/);
+    (teams[m[1]] = teams[m[1]] || []).push({ name, score: scoreM ? Number(scoreM[1]) : null });
+  }
+
+  const maxNum = Math.max(0, ...Object.values(games).map((g) => g.num || 0));
+  const out = [];
+  for (const gid of Object.keys(games)) {
+    const ts = (teams[gid] || []).filter((t) => t.name);
+    const bd = ts.find((t) => t.name.toLowerCase().includes(needle));
+    const opp = ts.find((t) => !t.name.toLowerCase().includes(needle));
+    if (!bd || !opp || bd.score == null || opp.score == null) continue;
+    const g = games[gid];
+    out.push({
+      date: g.date, time: g.time, field: g.field, opponent: opp.name,
+      our_score: bd.score, opp_score: opp.score, status: "final",
+      is_playoff: 1,
+      playoff_round: g.num && g.num === maxNum ? "Championship" : "Playoff",
+    });
+  }
+
+  let placement = null;
+  const placeRe = /<td[^>]*>(Champion|\d+(?:st|nd|rd|th))<\/td>\s*<td[^>]*>([^<]+)<\/td>/gi;
+  while ((m = placeRe.exec(tb))) {
+    if (decodeEntities(m[2]).toLowerCase().includes(needle)) {
+      placement = m[1];
+      break;
+    }
+  }
+  return { games: out, placement };
+}
+
 // Best-effort standings + playoff-placement scrape for the season-close
 // snapshot. Returns { wins, losses, ties, playoff_result } with any field
 // null if it couldn't be found -- never throws, caller treats this as

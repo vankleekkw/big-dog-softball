@@ -280,14 +280,6 @@ main h2 { padding-bottom: 8px; border-bottom: 2px solid rgba(242,106,33,.5); }
   box-shadow: 0 6px 18px rgba(0,0,0,.4);
 }
 
-/* Hero: an orange accent glow behind the content for depth. */
-.hero { position: relative; }
-.hero::before {
-  content: ""; position: absolute; inset: -30% -8% auto auto;
-  width: 340px; height: 340px; pointer-events: none; z-index: 0;
-  background: radial-gradient(circle, rgba(242,106,33,.16), transparent 70%);
-}
-.hero > * { position: relative; z-index: 1; }
 
 /* Stat table header: accent underline instead of a hard border. */
 table.stats thead th { box-shadow: inset 0 -2px 0 rgba(242,106,33,.45); }

@@ -56,7 +56,10 @@ CREATE TABLE season_leagues (
   league_label        TEXT NOT NULL,      -- "Wednesday" / "Friday"
   quickscores_org_dir TEXT,
   quickscores_league_id TEXT,
-  quickscores_team_id TEXT
+  quickscores_team_id TEXT,
+  -- This league's playoff finish for the team, e.g. "Champion", "2nd",
+  -- "Lost Semifinal". Playoffs are per-league (a season has multiple leagues).
+  playoff_result TEXT
 );
 CREATE INDEX idx_season_leagues_season ON season_leagues(season_id);
 
@@ -76,7 +79,9 @@ CREATE TABLE games (
   opponent         TEXT,
   our_score        INTEGER,
   opp_score        INTEGER,
-  status           TEXT DEFAULT 'scheduled'  -- 'scheduled' | 'final'
+  status           TEXT DEFAULT 'scheduled',  -- 'scheduled' | 'final'
+  is_playoff       INTEGER NOT NULL DEFAULT 0,
+  playoff_round    TEXT                        -- e.g. "Quarterfinal", "Championship"
 );
 CREATE INDEX idx_games_season_league ON games(season_league_id);
 

@@ -15,43 +15,59 @@ function fmtDate(d) {
   return dt.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric", year: "numeric" });
 }
 
-function groupByLeague(games) {
-  const groups = new Map();
-  for (const g of games) {
-    const key = g.league_label || "Schedule";
-    if (!groups.has(key)) groups.set(key, []);
-    groups.get(key).push(g);
-  }
-  return groups;
-}
-
-function gameRow(g) {
-  const scoreCell = g.status === "final"
+function gameRow(g, withRound) {
+  const score = g.status === "final"
     ? `${esc(g.our_score)}&ndash;${esc(g.opp_score)}`
     : `<span class="muted">—</span>`;
-  const resultCell = g.status === "final" ? resultPill(g.result) : `<span class="muted">Scheduled</span>`;
+  const result = g.status === "final" ? resultPill(g.result) : `<span class="muted">Scheduled</span>`;
+  const roundCell = withRound ? `<td>${esc(g.playoff_round || "Playoff")}</td>` : "";
   return `<tr>
-      <td>${fmtDate(g.date)}</td><td>${esc(g.time || "—")}</td><td>${esc(g.field || "—")}</td>
-      <td>${esc(g.opponent || "—")}</td><td>${scoreCell}</td><td>${resultCell}</td>
+      <td>${fmtDate(g.date)}</td>${roundCell}<td>${esc(g.opponent || "—")}</td>
+      <td>${esc(g.field || "—")}</td><td>${score}</td><td>${result}</td>
     </tr>`;
+}
+
+function table(headCols, rows) {
+  return `<div class="table-wrap" style="margin-bottom:var(--gap)">
+    <table class="stats"><thead><tr>${headCols.map((h) => `<th>${h}</th>`).join("")}</tr></thead>
+    <tbody>${rows}</tbody></table></div>`;
+}
+
+function leagueSection(league, games) {
+  const mine = games.filter((g) => g.league_id === league.id);
+  if (!mine.length && !league.playoff_result) return "";
+  const regular = mine.filter((g) => !g.is_playoff);
+  const playoff = mine.filter((g) => g.is_playoff);
+
+  const heading = league.quickscores_url
+    ? `<a href="${esc(league.quickscores_url)}" target="_blank" rel="noopener">${esc(league.label || "League")}</a>
+       <span class="muted" style="font-size:.7rem">↗ QuickScores</span>`
+    : esc(league.label || "League");
+  const finish = league.playoff_result
+    ? `<span class="pill w" style="margin-left:8px">🏆 ${esc(league.playoff_result)}</span>` : "";
+
+  let html = `<h2>${heading}${finish}</h2>`;
+  if (regular.length) {
+    html += table(["Date", "Opponent", "Field", "Score", "Result"],
+      regular.map((g) => gameRow(g, false)).join(""));
+  }
+  if (playoff.length) {
+    html += `<h3 style="margin-top:4px">Playoffs</h3>` +
+      table(["Date", "Round", "Opponent", "Field", "Score", "Result"],
+        playoff.map((g) => gameRow(g, true)).join(""));
+  }
+  return html;
 }
 
 function render(data) {
   const games = Array.isArray(data.games) ? data.games : [];
+  const leagues = Array.isArray(data.leagues) ? data.leagues : [];
   if (!games.length) {
     body.innerHTML = `<div class="card center"><p class="muted">Nothing on the board yet${data.season ? ` for ${esc(data.season.name)}` : ""}.</p></div>`;
     return;
   }
-  const groups = groupByLeague(games);
-  const sections = [...groups.entries()].map(([lab, rows]) => `
-    <h2>${esc(lab)}</h2>
-    <div class="table-wrap" style="margin-bottom:var(--gap)">
-      <table class="stats">
-        <thead><tr><th>Date</th><th>Time</th><th>Field</th><th>Opponent</th><th>Score</th><th>Result</th></tr></thead>
-        <tbody>${rows.map(gameRow).join("")}</tbody>
-      </table>
-    </div>`).join("");
-  body.innerHTML = `<p class="muted">${data.season ? esc(data.season.name) : "Current season"} · both leagues combined</p>${sections}`;
+  const sections = leagues.map((l) => leagueSection(l, games)).join("");
+  body.innerHTML = `<p class="muted">${data.season ? esc(data.season.name) : "Current season"}</p>${sections}`;
 }
 
 async function load(seasonId) {
