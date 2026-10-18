@@ -49,7 +49,10 @@ function decodeEntities(str) {
 // Returns [{date, time, field, opponent, our_score, opp_score, status}].
 export function parseResultsPage(html, teamMatch = "big dog") {
   const games = [];
-  const blocks = html.split('<li class="event"');
+  // Event <li>s can carry extra classes, e.g. <li class="event Highlight"> for
+  // continuations/special games. Splitting on the bare `<li class="event"`
+  // string silently swallowed those (dropping the game), so match any class list.
+  const blocks = html.split(/<li class="event[^"]*"/);
   const needle = teamMatch.toLowerCase();
 
   for (const block of blocks.slice(1)) {

@@ -33,7 +33,7 @@ function heroSection(data) {
       <div class="hero-main">
         <div class="hero-season muted">${data.season ? esc(data.season.name) : "Current Season"}</div>
         <p class="hero-record"><span class="num">${fmtRecord(record)}</span><span class="label">This Season</span></p>
-        ${data.season && data.season.playoff_result ? `<p class="champ-badge">🏆 ${esc(data.season.playoff_result)}</p>` : ""}
+        ${data.season && data.season.playoff_result ? `<p class="champ-badge">🏆 ${esc(data.season.playoff_result)} &middot; ${esc(data.season.name)}</p>` : ""}
         ${nextGameHtml}
         <p style="margin-top:10px"><a class="btn sm" href="/schedule.html">Full schedule &rsaquo;</a></p>
       </div>
