@@ -178,9 +178,11 @@ table.stats tfoot td { border-top: 2px solid var(--border); font-weight: 700; }
 .site-footer { border-top: 1px solid var(--border); margin-top: 40px;
   padding: 24px 0 calc(24px + env(safe-area-inset-bottom));
   color: var(--text-muted); font-size: .85rem; text-align: center; }
-.site-footer .flags { display: flex; gap: 10px; justify-content: center; margin-bottom: 10px; }
-.site-footer .flag { height: 22px; width: auto; border-radius: 3px;
-  border: 1px solid var(--border); box-shadow: 0 1px 3px rgba(0,0,0,.4); }
+.site-footer .flags { display: flex; gap: 14px; justify-content: center; align-items: center;
+  margin-bottom: 14px; }
+/* Both flags are 3:2, so a shared height gives identical dimensions. */
+.site-footer .flag { height: 44px; width: 66px; object-fit: cover; border-radius: 4px;
+  border: 1px solid var(--border); box-shadow: 0 2px 6px rgba(0,0,0,.5); }
 
 /* ---- Back / subnav (in-app back nav, needed in standalone PWA mode) ---- */
 .subnav { padding: 10px 16px 0; }
