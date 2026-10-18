@@ -234,3 +234,67 @@ input, select, textarea, button { font-size: 16px; } /* iOS: <16px triggers zoom
   .nav .links a { padding: 6px 8px; font-size: .82rem; }
   .hero { gap: 16px; }
 }
+
+/* ========================================================================
+   Depth & accent polish — richer surfaces, soft shadows, orange accents,
+   while staying on the dark theme. (Appended: later rules intentionally
+   enhance the base components above.)
+   ===================================================================== */
+
+/* Subtle background depth instead of flat black: a faint orange glow up top
+   and a soft light wash, over the base ink. */
+body {
+  background:
+    radial-gradient(1100px 460px at 50% -220px, rgba(242,106,33,.09), transparent 70%),
+    radial-gradient(900px 600px at 100% -100px, rgba(255,255,255,.028), transparent 60%),
+    var(--ink);
+  min-height: 100vh;
+}
+
+/* Cards & tiles: gentle top-to-bottom gradient, inset highlight, soft shadow. */
+.card, .stat-tile, .next-game {
+  background: linear-gradient(180deg, #21252c 0%, #171a1f 100%);
+  box-shadow: 0 2px 10px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.03);
+  transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease;
+}
+.card:hover, .stat-tile:hover {
+  border-color: rgba(242,106,33,.45);
+  box-shadow: 0 8px 22px rgba(0,0,0,.45), 0 0 0 1px rgba(242,106,33,.14),
+              0 10px 26px rgba(242,106,33,.08);
+}
+/* Only clickable cards lift, so info cards don't jitter on hover. */
+a.card:hover, .player-card:hover { transform: translateY(-3px); }
+
+.stat-tile .value { text-shadow: 0 1px 12px rgba(242,106,33,.22); }
+
+.btn { box-shadow: 0 2px 8px rgba(242,106,33,.28); }
+.btn:hover { box-shadow: 0 5px 16px rgba(242,106,33,.42); }
+.btn.secondary { box-shadow: 0 2px 8px rgba(0,0,0,.3); }
+
+/* Section headers: short accent underline for rhythm/depth. */
+main h2 { position: relative; padding-bottom: 7px; }
+main h2::after {
+  content: ""; position: absolute; left: 0; bottom: 0; width: 44px; height: 3px;
+  background: linear-gradient(90deg, var(--accent), var(--orange-600)); border-radius: 2px;
+}
+
+/* Sticky header + nav: a bit of lift and a gradient wash. */
+.site-header {
+  background: linear-gradient(180deg, rgba(23,25,29,.96), rgba(17,18,20,.92));
+  box-shadow: 0 6px 18px rgba(0,0,0,.4);
+}
+
+/* Hero: an orange accent glow behind the content for depth. */
+.hero { position: relative; }
+.hero::before {
+  content: ""; position: absolute; inset: -30% -8% auto auto;
+  width: 340px; height: 340px; pointer-events: none; z-index: 0;
+  background: radial-gradient(circle, rgba(242,106,33,.16), transparent 70%);
+}
+.hero > * { position: relative; z-index: 1; }
+
+/* Stat table header: accent underline instead of a hard border. */
+table.stats thead th { box-shadow: inset 0 -2px 0 rgba(242,106,33,.45); }
+
+/* Result pills get a touch more presence. */
+.pill { box-shadow: inset 0 0 0 1px rgba(255,255,255,.05); }
