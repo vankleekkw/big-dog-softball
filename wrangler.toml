@@ -24,5 +24,5 @@ database_id = "3aa14288-4c12-4734-a51e-ffd006f8e600"
 # For LOCAL dev only, put ADMIN_DEV_BYPASS=1 in .dev.vars (gitignored) to skip
 # JWT verification. In production the middleware fails CLOSED if these are unset.
 [vars]
-ACCESS_TEAM_DOMAIN = ""   # e.g. "bigdog.cloudflareaccess.com"
-ACCESS_AUD = ""           # Access application Audience (AUD) tag
+ACCESS_TEAM_DOMAIN = "bigdogsoftball.cloudflareaccess.com"
+ACCESS_AUD = "6cfcc626908b5bd107902882eccc6d357586704bdf49defe6c85045d047b0c08"
