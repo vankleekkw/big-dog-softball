@@ -67,10 +67,13 @@ h2 { font-size: clamp(1.3rem, 3.5vw, 1.8rem); }
 }
 .nav .brand { display: flex; align-items: center; gap: 10px; font-family: var(--font-head);
   text-transform: uppercase; color: var(--text); font-size: 1rem; }
-/* Logo is a circular badge on a white square — contain it on a white chip so the
-   whole badge shows, centered, rather than cropping it off-center. */
-.nav .brand img { width: 40px; height: 40px; border-radius: 50%; object-fit: contain;
-  background: #fff; padding: 2px; }
+/* Logo is a circular badge sitting ~5% high on a white square. Clip it to a white
+   circular chip and nudge the badge down 5% so it reads centered. */
+.logo-chip { display: inline-block; overflow: hidden; border-radius: 50%; background: #fff;
+  flex-shrink: 0; }
+.logo-chip img { width: 100%; height: 100%; object-fit: contain; display: block;
+  transform: translateY(5%); }
+.nav .brand .logo-chip { width: 40px; height: 40px; }
 .nav .links { display: flex; gap: 4px; margin-left: auto; flex-wrap: wrap; }
 .nav .links a {
   color: var(--text-muted); padding: 6px 10px; border-radius: var(--radius-sm);
@@ -135,8 +138,7 @@ table.stats tfoot td { border-top: 2px solid var(--border); font-weight: 700; }
   display: flex; align-items: center; gap: 24px; flex-wrap: wrap;
   padding: 24px 0;
 }
-.hero-logo { width: 120px; height: 120px; border-radius: 50%; object-fit: contain;
-  background: #fff; padding: 6px; border: 3px solid var(--accent); flex-shrink: 0; }
+.hero-logo { width: 120px; height: 120px; border: 3px solid var(--accent); }
 .hero-main { flex: 1; min-width: 220px; }
 .hero-season { text-transform: uppercase; font-size: .8rem; letter-spacing: .05em; margin-bottom: 4px; }
 .hero-record { display: flex; align-items: baseline; gap: 10px; margin: 0 0 14px; }
@@ -200,6 +202,13 @@ table.stats th.sort-desc::after { content: "\2193"; opacity: 1; color: var(--acc
 .season-picker select { -webkit-appearance: none; appearance: none; font-size: 16px;
   background: var(--card); color: var(--text); border: 1px solid var(--border);
   border-radius: var(--radius-sm); padding: 10px 14px; min-height: 44px; }
+
+/* ---- Game list (home: recent/upcoming) ---- */
+.game-list { list-style: none; margin: 0; padding: 0; }
+.game-line { display: flex; align-items: center; gap: 8px; padding: 6px 0;
+  border-bottom: 1px solid var(--border); font-size: .92rem; }
+.game-line:last-child { border-bottom: none; }
+.game-line .vs { font-weight: 600; flex: 1; }
 
 /* ---- Season detail ---- */
 .season-hero { display: flex; gap: 20px; flex-wrap: wrap; align-items: flex-start; margin-bottom: 8px; }

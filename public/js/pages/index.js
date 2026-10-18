@@ -1,15 +1,9 @@
-import { mountChrome, api, setLoading } from "../common.js";
+import { mountChrome, api, setLoading, esc, resultPill } from "../common.js";
 
 mountChrome("");
 
 const app = document.getElementById("app");
 setLoading(app, "Loading the latest…");
-
-function esc(s) {
-  return String(s ?? "").replace(/[&<>"']/g, (c) => ({
-    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
-  }[c]));
-}
 
 function fmtRecord(r) {
   if (!r) return "—";
@@ -24,62 +18,81 @@ function fmtDate(d) {
   return dt.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
 }
 
-function render(data) {
-  const { record, nextGame, lastGame, career } = data;
-
+function heroSection(data) {
+  const { record, nextGame } = data;
   const nextGameHtml = nextGame
     ? `<div class="next-game">
          <div class="label">Next Up${nextGame.league_label ? ` · ${esc(nextGame.league_label)}` : ""}</div>
          <div class="matchup">vs ${esc(nextGame.opponent)}</div>
          <div class="muted">${fmtDate(nextGame.date)}${nextGame.time ? ` · ${esc(nextGame.time)}` : ""}${nextGame.field ? ` · ${esc(nextGame.field)}` : ""}</div>
        </div>`
-    : `<div class="next-game"><div class="label">Next Up</div><div class="muted">Nothing on the books yet. We'll show up eventually.</div></div>`;
-
-  const lastGameHtml = lastGame
-    ? `<div class="card">
-         <h3>Last Time Out</h3>
-         <p>
-           <span class="pill ${(lastGame.result || "").toLowerCase()}">${esc(lastGame.result || "?")}</span>
-           ${esc(lastGame.our_score)}&ndash;${esc(lastGame.opp_score)} vs ${esc(lastGame.opponent)}
-         </p>
-         <p class="muted">${fmtDate(lastGame.date)}</p>
-       </div>`
-    : `<div class="card"><h3>Last Time Out</h3><p class="muted">No games played yet this season. Bats are still in the trunk.</p></div>`;
-
-  const careerHtml = `<div class="card">
-      <h3>All-Time Record</h3>
-      <p class="hero-record"><span class="num">${fmtRecord(career)}</span></p>
-      <p class="muted">46 seasons deep across Chicagoland. We keep showing up.</p>
-    </div>`;
-
-  const blurbHtml = `<div class="card">
-      <h3>Who We Are</h3>
-      <p>Big Dog Gotta Eat: a men's slow-pitch softball team that takes the softball very seriously
-         and basically nothing else. 12&Prime; softball, played with zero shame and occasional
-         defense.</p>
-      <p class="edit-note">Editable: swap this blurb for the real team bio / mission statement / inside joke of choice.</p>
-    </div>`;
-
-  app.innerHTML = `
+    : `<div class="next-game"><div class="label">Next Up</div><div class="muted">Season's a wrap — see you next year.</div></div>`;
+  return `
     <section class="hero">
-      <img class="hero-logo" src="/assets/logo.jpg" alt="Big Dog Gotta Eat logo">
+      <span class="hero-logo logo-chip"><img src="/assets/logo.jpg" alt="Big Dog Gotta Eat logo"></span>
       <div class="hero-main">
         <div class="hero-season muted">${data.season ? esc(data.season.name) : "Current Season"}</div>
         <p class="hero-record"><span class="num">${fmtRecord(record)}</span><span class="label">This Season</span></p>
         ${nextGameHtml}
+        <p style="margin-top:10px"><a class="btn sm" href="/schedule.html">Full schedule &rsaquo;</a></p>
       </div>
-    </section>
+    </section>`;
+}
+
+function gameLine(g) {
+  const score = g.status === "final" ? `${esc(g.our_score)}&ndash;${esc(g.opp_score)}` : fmtDate(g.date);
+  const tag = g.status === "final" ? resultPill(g.result) : `<span class="muted">${esc(g.time || "")}</span>`;
+  return `<li class="game-line">${tag} <span class="vs">vs ${esc(g.opponent)}</span> <span class="muted">${score}</span></li>`;
+}
+
+function thisSeason(games, seasonName) {
+  if (!games.length) return "";
+  const finals = games.filter((g) => g.status === "final");
+  const recent = finals.slice(-4).reverse();
+  const upcoming = games.filter((g) => g.status !== "final").slice(0, 3);
+  const col = (title, list) => list.length
+    ? `<div class="card"><h3>${title}</h3><ul class="game-list">${list.map(gameLine).join("")}</ul></div>`
+    : "";
+  return `
+    <h2 style="margin-top:24px">This Season${seasonName ? ` · ${esc(seasonName)}` : ""}</h2>
+    <section class="card-grid">
+      ${col("Recent Results", recent)}
+      ${col("Upcoming", upcoming)}
+    </section>`;
+}
+
+function bottomCards(career) {
+  return `
     <section class="card-grid" style="margin-top:var(--gap)">
-      ${lastGameHtml}
-      ${careerHtml}
-      ${blurbHtml}
-    </section>
+      <div class="card">
+        <h3>All-Time Record</h3>
+        <p class="hero-record"><span class="num">${fmtRecord(career)}</span></p>
+        <p class="muted">46 seasons deep across Chicagoland. We keep showing up.
+          <a href="/hof.html">Hall of Fame &rsaquo;</a></p>
+      </div>
+      <div class="card">
+        <h3>Who We Are</h3>
+        <p>Big Dog Gotta Eat: a men's slow-pitch softball team that takes the softball very seriously
+           and basically nothing else. 12&Prime; softball, played with zero shame and occasional defense.</p>
+        <p class="edit-note">Editable: swap this blurb for the real team bio / inside joke of choice.</p>
+      </div>
+    </section>`;
+}
+
+function render(data, games) {
+  app.innerHTML = `
+    ${heroSection(data)}
+    ${thisSeason(games, data.season ? data.season.name : "")}
+    ${bottomCards(data.career)}
   `;
 }
 
 try {
-  const data = await api("/api/overview");
-  render(data);
+  const [data, sched] = await Promise.all([
+    api("/api/overview"),
+    api("/api/schedule?season=active").catch(() => ({ games: [] })),
+  ]);
+  render(data, Array.isArray(sched.games) ? sched.games : []);
 } catch (err) {
   app.innerHTML = `<div class="card center">
       <h3>Couldn't load the latest</h3>

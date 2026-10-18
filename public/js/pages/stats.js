@@ -122,5 +122,5 @@ async function load(seasonId) {
   }
 }
 
-const initialId = await mountSeasonPicker(picker, load);
+const initialId = await mountSeasonPicker(picker, load, { includeCareer: true });
 await load(initialId ?? "active");

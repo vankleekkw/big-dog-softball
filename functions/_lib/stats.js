@@ -15,6 +15,27 @@ export function totalBases(s) {
   return singles + 2 * (s.b2 || 0) + 3 * (s.b3 || 0) + 4 * (s.hr || 0);
 }
 
+// Leaderboard with a RELATIVE at-bats qualifier: to appear in a RATE-stat
+// leaderboard (avg/obp/slg/ops) a player must have at least `qualifyPct` of the
+// season's/career's top AB total (so a 2-for-2 doesn't lead the batting title).
+// Counting-stat leaders (hr, h, ab, b2, b3, r) are not AB-qualified.
+// `cats` is an array of { key, rate? }. Returns { leaders, minAB }.
+export function computeLeaders(players, cats, qualifyPct = 0.5) {
+  const maxAB = players.reduce((m, p) => Math.max(m, p.ab || 0), 0);
+  const minAB = maxAB * qualifyPct;
+  const leaders = {};
+  for (const c of cats) {
+    const pool = c.rate ? players.filter((p) => (p.ab || 0) >= minAB && (p.ab || 0) > 0) : players;
+    let best = null;
+    for (const p of pool) {
+      const v = Number(p[c.key] || 0);
+      if (!best || v > best.value) best = { player_id: p.player_id, name: p.name, value: v };
+    }
+    if (best) leaders[c.key] = best;
+  }
+  return { leaders, minAB };
+}
+
 // Attach avg/slg/obp/ops (numbers, 0 when undefined). Returns a NEW object.
 export function withRates(s) {
   const ab = s.ab || 0, bb = s.bb || 0, sac = s.sac || 0, h = s.h || 0;

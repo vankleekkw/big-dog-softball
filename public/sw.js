@@ -2,13 +2,13 @@
 // Strategy: NETWORK-FIRST for the shell (HTML/CSS/JS/assets) so content is never
 // stale, with a cached copy kept as an offline fallback. API data is network-only
 // (never cached, always live). Bump CACHE on shell changes to evict old entries.
-const CACHE = "bigdog-v2";
+const CACHE = "bigdog-v3";
 const SHELL = [
-  "/", "/index.html", "/history.html", "/schedule.html", "/stats.html",
+  "/", "/index.html", "/history.html", "/hof.html", "/schedule.html", "/stats.html",
   "/players.html", "/player.html", "/season.html",
   "/css/styles.css",
   "/js/common.js", "/js/stats.js",
-  "/js/pages/index.js", "/js/pages/history.js", "/js/pages/schedule.js",
+  "/js/pages/index.js", "/js/pages/history.js", "/js/pages/hof.js", "/js/pages/schedule.js",
   "/js/pages/stats.js", "/js/pages/players.js", "/js/pages/player.js",
   "/js/pages/season.js",
   "/assets/logo.jpg", "/assets/chicago-flag.svg", "/assets/blackout-usa.svg",

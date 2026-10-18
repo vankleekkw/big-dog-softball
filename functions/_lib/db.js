@@ -256,3 +256,53 @@ export async function getPlayerById(db, id) {
   const row = await db.prepare("SELECT * FROM players WHERE id = ?").bind(id).first();
   return row || null;
 }
+
+// ---- Career (all-seasons) aggregates ---------------------------------------
+
+// Per-player career raw counts across ALL seasons, joined with name. Uses
+// season_batting for seasons that have it and game_player_stats only for
+// seasons that don't, so no season is double-counted (mirrors getPlayerCareerRaw).
+export async function getCareerBattingWithPlayers(db) {
+  const sumCols = (prefix = "") =>
+    RAW_COUNT_COLS.map((c) => `SUM(${prefix}${c}) AS ${c}`).join(", ");
+
+  const sb = await db
+    .prepare(`SELECT player_id, ${sumCols()} FROM season_batting GROUP BY player_id`)
+    .all();
+  const gps = await db
+    .prepare(
+      `SELECT gps.player_id AS player_id, ${sumCols("gps.")}
+       FROM game_player_stats gps
+       JOIN games g ON g.id = gps.game_id
+       JOIN season_leagues sl ON sl.id = g.season_league_id
+       WHERE sl.season_id NOT IN (SELECT DISTINCT season_id FROM season_batting)
+       GROUP BY gps.player_id`
+    )
+    .all();
+
+  const byId = new Map();
+  const add = (rows) => {
+    for (const r of rows) {
+      const cur = byId.get(r.player_id) || Object.fromEntries(RAW_COUNT_COLS.map((c) => [c, 0]));
+      for (const c of RAW_COUNT_COLS) cur[c] += r[c] || 0;
+      byId.set(r.player_id, cur);
+    }
+  };
+  add(sb.results);
+  add(gps.results);
+  if (byId.size === 0) return [];
+
+  // Fetch all players in one go (career spans ~every player; an IN(...) list
+  // would blow D1's 100-bound-parameter limit).
+  const all = await db.prepare("SELECT id, name, number FROM players").all();
+  const nameById = new Map(all.results.map((p) => [p.id, p]));
+  return [...byId.entries()].map(([player_id, counts]) => {
+    const p = nameById.get(player_id);
+    return { player_id, name: p ? p.name : "Unknown", number: p ? p.number : null, ...counts };
+  });
+}
+
+export async function getTotalFinalGames(db) {
+  const row = await db.prepare("SELECT COUNT(*) AS n FROM games WHERE status = 'final'").first();
+  return row ? row.n : 0;
+}

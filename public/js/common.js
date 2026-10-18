@@ -7,6 +7,7 @@ const LOGO = "/assets/logo.jpg";
 const NAV = [
   ["", "Home"],
   ["history", "History"],
+  ["hof", "Hall of Fame"],
   ["schedule", "Schedule"],
   ["stats", "Team Stats"],
   ["players", "Players"],
@@ -26,7 +27,7 @@ export function mountChrome(active = "", opts = {}) {
   document.body.insertAdjacentHTML("afterbegin", `
     <header class="site-header">
       <nav class="nav">
-        <a class="brand" href="/"><img src="${LOGO}" alt="Big Dog Gotta Eat logo">Big Dog Gotta Eat</a>
+        <a class="brand" href="/"><span class="logo-chip"><img src="${LOGO}" alt="Big Dog Gotta Eat logo"></span>Big Dog Gotta Eat</a>
         <div class="links">${links}</div>
       </nav>
     </header>
@@ -91,18 +92,24 @@ export function esc(s) {
 // Render a season dropdown into `container`, auto-selecting the active season.
 // Calls onPick(seasonId) on change. Returns the initially-selected season id
 // (or null if none). Lets schedule/stats navigate to any past season.
-export async function mountSeasonPicker(container, onPick) {
+export async function mountSeasonPicker(container, onPick, opts = {}) {
   let seasons = [];
   try { seasons = await api("/api/season-list"); } catch { return null; }
   if (!seasons.length) return null;
   const active = seasons.find((s) => s.is_active) || seasons[0];
+  const careerOpt = opts.includeCareer
+    ? `<option value="career">Career · All-Time</option>` : "";
   container.innerHTML = `
     <div class="season-picker">
       <label for="seasonSel">Season</label>
       <select id="seasonSel">
+        ${careerOpt}
         ${seasons.map((s) => `<option value="${s.id}"${s.id === active.id ? " selected" : ""}>${esc(s.name)}${s.is_active ? " (current)" : ""}</option>`).join("")}
       </select>
     </div>`;
-  container.querySelector("#seasonSel").addEventListener("change", (e) => onPick(Number(e.target.value)));
+  container.querySelector("#seasonSel").addEventListener("change", (e) => {
+    const v = e.target.value;
+    onPick(v === "career" ? "career" : Number(v));
+  });
   return active.id;
 }
