@@ -9,14 +9,15 @@ pages_build_output_dir = "public"
 [[d1_databases]]
 binding = "DB"
 database_name = "softball"
-database_id = "PLACEHOLDER_RUN_wrangler_d1_create_softball"
+database_id = "3aa14288-4c12-4734-a51e-ffd006f8e600"
 
-# R2 object storage for player/logo photos (free tier). Optional for the first
-# smoke test — player photo_url can also be any external URL. Create with:
-#   npx wrangler r2 bucket create big-dog-assets
-[[r2_buckets]]
-binding = "ASSETS_BUCKET"
-bucket_name = "big-dog-assets"
+# R2 object storage for player/logo photos (free tier). Optional — only needed
+# for admin photo uploads; player photo_url can also be any external URL.
+# DISABLED until R2 is enabled on the account (Dashboard → R2 → enable free tier),
+# then: `npx wrangler r2 bucket create big-dog-assets` and uncomment this block.
+# [[r2_buckets]]
+# binding = "ASSETS_BUCKET"
+# bucket_name = "big-dog-assets"
 
 # Admin auth (Cloudflare Access). Set the real values as Pages env vars in the
 # dashboard once the Access application exists. See functions/api/admin/_middleware.js.
