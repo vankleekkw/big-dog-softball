@@ -271,12 +271,8 @@ a.card:hover, .player-card:hover { transform: translateY(-3px); }
 .btn:hover { box-shadow: 0 5px 16px rgba(242,106,33,.42); }
 .btn.secondary { box-shadow: 0 2px 8px rgba(0,0,0,.3); }
 
-/* Section headers: short accent underline for rhythm/depth. */
-main h2 { position: relative; padding-bottom: 7px; }
-main h2::after {
-  content: ""; position: absolute; left: 0; bottom: 0; width: 44px; height: 3px;
-  background: linear-gradient(90deg, var(--accent), var(--orange-600)); border-radius: 2px;
-}
+/* Section headers: full-width accent underline under the whole title. */
+main h2 { padding-bottom: 8px; border-bottom: 2px solid rgba(242,106,33,.5); }
 
 /* Sticky header + nav: a bit of lift and a gradient wash. */
 .site-header {
