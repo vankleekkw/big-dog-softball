@@ -25,6 +25,14 @@ export async function onRequestGet({ request, env }) {
     const rawRows = await getSeasonBattingWithPlayers(env.DB, season.id);
     const players = rawRows.map((r) => withRates(r));
     const team = withRates(sumCounts(rawRows));
+    // team.gp from summing player rows = player-appearances, not games played.
+    // Override with the actual count of completed team games this season.
+    const gamesRow = await env.DB.prepare(
+      `SELECT COUNT(*) AS n FROM games g
+       JOIN season_leagues sl ON sl.id = g.season_league_id
+       WHERE sl.season_id = ? AND g.status = 'final'`
+    ).bind(season.id).first();
+    team.gp = gamesRow ? gamesRow.n : team.gp;
 
     const leaders = {
       avg: pickLeader(players, "avg"),

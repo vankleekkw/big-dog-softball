@@ -38,6 +38,8 @@ CREATE TABLE seasons (
   final_losses   INTEGER,
   final_ties     INTEGER,
   playoff_result TEXT,                    -- free text, e.g. "Lost Top 5 Semifinal"
+  photo_url      TEXT,                    -- optional team photo for the season
+  recap          TEXT,                    -- optional highlights / recap blurb
   is_active      INTEGER NOT NULL DEFAULT 0,
   -- Chronological ordering for the history table. Higher = more recent.
   sort_order     INTEGER NOT NULL DEFAULT 0,

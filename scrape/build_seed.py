@@ -92,15 +92,35 @@ def norm(s):
 
 # --- HTTP cache ---------------------------------------------------------------
 
-_cache = sqlite3.connect(HTTP_CACHE)
-_cache.execute("CREATE TABLE IF NOT EXISTS pages (url TEXT PRIMARY KEY, html TEXT)")
-_cache.commit()
+CACHE_ONLY = False  # when True, never hit the network; cache misses return None
+
+
+def _open_cache(path):
+    c = sqlite3.connect(path)
+    c.execute("CREATE TABLE IF NOT EXISTS pages (url TEXT PRIMARY KEY, html TEXT)")
+    c.commit()
+    return c
+
+
+_cache = _open_cache(HTTP_CACHE)
+
+
+def set_cache(path, cache_only):
+    """Point the HTTP cache at `path` (e.g. a read-only snapshot) and optionally
+    forbid network fetches. Used for building a partial seed from a live scrape's
+    cache without touching the in-progress cache DB."""
+    global _cache, CACHE_ONLY
+    _cache.close()
+    _cache = _open_cache(path)
+    CACHE_ONLY = cache_only
 
 
 def fetch_cached(url):
     row = _cache.execute("SELECT html FROM pages WHERE url = ?", (url,)).fetchone()
     if row:
         return row[0]
+    if CACHE_ONLY:
+        return None
     html = scrape.fetch(url)  # polite delay + retries live in scrape.fetch
     _cache.execute("INSERT OR REPLACE INTO pages (url, html) VALUES (?, ?)", (url, html))
     _cache.commit()
@@ -108,7 +128,8 @@ def fetch_cached(url):
 
 
 def soup(url):
-    return BeautifulSoup(fetch_cached(url), "html.parser")
+    html = fetch_cached(url)
+    return None if html is None else BeautifulSoup(html, "html.parser")
 
 
 # --- table helpers ------------------------------------------------------------
@@ -155,6 +176,8 @@ def scrape_nav():
 def scrape_roster():
     """[(canonical_name, uid)] and {name:{'ab','h'}} career totals from teamStats.php."""
     sp = soup(f"{BASE}/teamStats.php?teamID={TEAM_ID}")
+    if sp is None:
+        return [], {}
     t = find_ab_table(sp)
     rows = table_rows(t)
     colmap = {h: i for i, h in enumerate(rows[0][1])}
@@ -181,6 +204,8 @@ def scrape_roster():
 def scrape_careerstats(uid, label_to_sid):
     """{sid: counts} canonical per-season lines for one player (historical only)."""
     sp = soup(f"{BASE}/careerStats.php?teamID={TEAM_ID}&playerUserID={uid}")
+    if sp is None:
+        return {}
     t = find_ab_table(sp)
     if not t:
         return {}
@@ -223,6 +248,8 @@ def scrape_schedule(sid):
     sp = soup(f"{BASE}/schedule.php?teamID={TEAM_ID}&seasonID={sid}")
     record = {"w": None, "l": None, "t": None}
     games = []
+    if sp is None:
+        return record, games
     for t in sp.find_all("table"):
         rows = table_rows(t)
         if not rows:
@@ -264,6 +291,8 @@ def scrape_schedule(sid):
 def scrape_box(sid, gid):
     """[(playerID, entered_name, counts)] for one game. playerID is per-season."""
     sp = soup(f"{BASE}/stats.php?teamID={TEAM_ID}&seasonID={sid}&gameID={gid}")
+    if sp is None:
+        return []
     t = find_ab_table(sp)
     if not t:
         return []
@@ -356,13 +385,24 @@ def match_identities(data):
 
         used = set()
         pid_to_uid[sid] = {}
+        name_of_uid = data["name_of_uid"]
         for pid, c in box_sum.items():
             key = tuple(c[k] for k in MATCH_KEYS)
             cands = [u for u in canon_by_tuple.get(key, []) if u not in used]
             if len(cands) >= 1:
-                if len(canon_by_tuple.get(key, [])) > 1:
-                    diag["tuple_collisions"].append((sid, label, box_name.get(pid), key))
                 uid = cands[0]
+                if len(cands) > 1:
+                    # Ambiguous stat tuple: disambiguate by matching the box's
+                    # entered name to the canonical name (exact, then prefix of
+                    # first name + last initial). Recent seasons use identical
+                    # names so this resolves cleanly; true aliases fall back to
+                    # cands[0] (interchangeable since the season lines are equal).
+                    bn = (box_name.get(pid) or "").lower()
+                    exact = [u for u in cands if name_of_uid.get(u, "").lower() == bn]
+                    if exact:
+                        uid = exact[0]
+                    else:
+                        diag["tuple_collisions"].append((sid, label, box_name.get(pid), key))
                 used.add(uid)
                 pid_to_uid[sid][pid] = uid
             else:
@@ -393,11 +433,17 @@ def verify(data, pid_to_uid):
                 for k in RAW_KEYS:
                     gps_season[(sid, uid)][k] += c[k]
                 gps_season[(sid, uid)]["gp"] += 1  # one game played
+    gs_detail = []
     for sid, uidmap in canon.items():
         for uid, c in uidmap.items():
+            if not any(c[k] for k in MATCH_KEYS):
+                continue  # all-zero season line (rostered, no at-bats): 0 == 0, skip
             g = gps_season.get((sid, uid))
             if g is None or any(g[k] != c[k] for k in MATCH_KEYS):
                 gs_mis += 1
+                gs_detail.append((sid, data["name_of_uid"].get(uid)))
+    if gs_detail:
+        print("  game->season misses:", gs_detail[:15])
 
     # season -> career: sum canon per uid vs career page (by name)
     sc_mis = 0
@@ -407,14 +453,17 @@ def verify(data, pid_to_uid):
             per_uid[uid]["ab"] += c["ab"]; per_uid[uid]["h"] += c["h"]
     # current-season transient (names) for players still active
     current = {}
-    try:
+    if CACHE_ONLY:
+        pass  # skip network; partial/cache-only verify won't reconcile to full career anyway
+    else:
+      try:
         conn = scrape.init_db(":memory:")
         scrape.scrape_season_players(conn, CURRENT_SEASON_SPS_ID)
         for name, ab, h in conn.execute(
                 "SELECT p.name, sb.ab, sb.h FROM season_batting sb JOIN players p ON p.id=sb.player_id"):
-            current[re.sub(r"\*+\s*$", "", name).strip()] = {"ab": ab, "h": h}
+            current[norm(re.sub(r"\*+\s*$", "", name))] = {"ab": ab, "h": h}
         conn.close()
-    except Exception as e:
+      except Exception as e:
         print(f"  ! current-season transient scrape failed: {e}")
     for name, cc in career.items():
         uid = next((u for n, u in data["players"] if n == name), None)
@@ -422,6 +471,8 @@ def verify(data, pid_to_uid):
         cur = current.get(name, {"ab": 0, "h": 0})
         if hist["ab"] + cur["ab"] != cc["ab"] or hist["h"] + cur["h"] != cc["h"]:
             sc_mis += 1
+            print(f"  season->career miss: {name} "
+                  f"AB {hist['ab']}+{cur['ab']}/{cc['ab']}  H {hist['h']}+{cur['h']}/{cc['h']}")
     return gs_mis, sc_mis
 
 
@@ -606,7 +657,12 @@ def main():
     ap.add_argument("--verify-only", action="store_true")
     ap.add_argument("--no-emit", action="store_true")
     ap.add_argument("--limit-seasons", type=int, default=None, help="smoke test: newest N seasons only")
+    ap.add_argument("--cache", default=None, help="use this HTTP cache DB (e.g. a snapshot) instead of the default")
+    ap.add_argument("--cache-only", action="store_true", help="never hit the network; cache misses are skipped")
     args = ap.parse_args()
+
+    if args.cache or args.cache_only:
+        set_cache(args.cache or HTTP_CACHE, args.cache_only)
 
     data = scrape_all(limit_seasons=args.limit_seasons)
     pid_to_uid, diag = match_identities(data)
