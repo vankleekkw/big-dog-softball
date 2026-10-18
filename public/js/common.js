@@ -14,10 +14,11 @@ const NAV = [
 ];
 
 export function mountChrome(active = "", opts = {}) {
-  const links = NAV.map(([key, label]) => {
+  // Navigation is a compact top-right dropdown (same as the admin panel).
+  const options = NAV.map(([key, label]) => {
     const href = key === "" ? "/" : `/${key}.html`;
-    const cls = key === active ? ' class="active"' : "";
-    return `<a href="${href}"${cls}>${label}</a>`;
+    const sel = key === active ? " selected" : "";
+    return `<option value="${href}"${sel}>${label}</option>`;
   }).join("");
 
   const back = opts.back
@@ -28,10 +29,13 @@ export function mountChrome(active = "", opts = {}) {
     <header class="site-header">
       <nav class="nav">
         <a class="brand" href="/"><span class="logo-chip"><img src="${LOGO}" alt="Big Dog Gotta Eat logo"></span>Big Dog Gotta Eat</a>
-        <div class="links">${links}</div>
+        <div class="nav-dropdown"><select id="site-nav" aria-label="Go to section">${options}</select></div>
       </nav>
     </header>
     ${back ? `<div class="subnav container">${back}</div>` : ""}`);
+
+  const navSel = document.getElementById("site-nav");
+  if (navSel) navSel.addEventListener("change", (e) => { location.href = e.target.value; });
 
   if (opts.back) {
     const btn = document.querySelector(".back-btn");
