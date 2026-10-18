@@ -325,6 +325,79 @@ def scrape_box(sid, gid):
     return out
 
 
+def bracket_date_iso(s):
+    m = re.search(r"(\d{1,2})/(\d{1,2})/(\d{2,4})", s or "")
+    if not m:
+        return None
+    y = m.group(3)
+    y = "20" + y if len(y) == 2 else y
+    return f"{y}-{int(m.group(1)):02d}-{int(m.group(2)):02d}"
+
+
+def qs_league_info(league_id):
+    """Fetch a QuickScores league page; return {name, placement, games} where
+    games are the team's playoff/bracket games. Mirrors functions/_lib/quickscores.js
+    parseBracket/parseLeagueName (bracket keyed by Game_/*Team_ anchor ids)."""
+    url = f"https://www.quickscores.com/Orgs/ResultsDisplay.php?OrgDir={QS_ORG}&LeagueID={league_id}"
+    try:
+        html = fetch_cached(url)
+    except Exception as e:
+        print(f"  ! QS league {league_id} fetch failed: {e}")
+        return {"name": None, "placement": None, "games": []}
+    if html is None:
+        return {"name": None, "placement": None, "games": []}
+    nm = re.search(r"<h1>([^<]+)</h1>", html)
+    name = norm(nm.group(1)) if nm else None
+    games, placement = [], None
+    if 'id="TournamentBracket"' in html:
+        meta = {}
+        for gm in re.finditer(r'id="Game_(\d+)"[^>]*>(.{0,500}?)</div>', html, re.S):
+            ps = [norm(re.sub(r"<[^>]+>", " ", p)) for p in re.findall(r"<p[^>]*>(.*?)</p>", gm.group(2), re.S)]
+            numm = re.search(r"Game\s+(\d+)", ps[0]) if ps else None
+            meta[gm.group(1)] = {
+                "num": int(numm.group(1)) if numm else None,
+                "date": bracket_date_iso(ps[1] if len(ps) > 1 else ""),
+                "time": (ps[2] if len(ps) > 2 else "") or None,
+                "field": (ps[3] if len(ps) > 3 else "") or None,
+            }
+        teams = {}
+        for tm in re.finditer(r'id="\w*Team_(\d+)"[^>]*>(.{0,300}?)</div>', html, re.S):
+            n2 = re.search(r'<span class="notranslate">([^<]*)</span>', tm.group(2))
+            if not n2:
+                continue
+            tname = re.sub(r"^\[\d+\]\s*", "", norm(n2.group(1)))
+            if not tname:
+                continue
+            sm = re.search(r'<span class="paddingLeft10">(\d+)</span>', tm.group(2))
+            teams.setdefault(tm.group(1), []).append(
+                {"name": tname, "score": int(sm.group(1)) if sm else None})
+        maxnum = max([m2["num"] or 0 for m2 in meta.values()] + [0])
+        for gid, g in meta.items():
+            ts = [t for t in teams.get(gid, []) if t["name"]]
+            bd = next((t for t in ts if "big dog" in t["name"].lower()), None)
+            opp = next((t for t in ts if "big dog" not in t["name"].lower()), None)
+            if not bd or not opp or bd["score"] is None or opp["score"] is None:
+                continue
+            games.append({
+                "date": g["date"], "time": g["time"], "field": g["field"],
+                "opponent": opp["name"], "our_score": bd["score"], "opp_score": opp["score"],
+                "playoff_round": "Championship" if g["num"] and g["num"] == maxnum else "Playoff",
+            })
+        pm = re.search(r'<td[^>]*>(Champion|\d+(?:st|nd|rd|th))</td>\s*<td[^>]*>([^<]+)</td>', html)
+        # find OUR placement
+        for pm in re.finditer(r'<td[^>]*>(Champion|\d+(?:st|nd|rd|th))</td>\s*<td[^>]*>([^<]+)</td>', html):
+            if "big dog" in norm(pm.group(2)).lower():
+                placement = pm.group(1)
+                break
+    return {"name": name, "placement": placement, "games": games}
+
+
+def format_placement(p):
+    if not p:
+        return None
+    return "Champions" if p == "Champion" else f"{p} Place"
+
+
 def scrape_qs_champion(league_id):
     """Best-effort: the playoff Champion team name from a QuickScores league's
     ResultsDisplay bracket (the <td> right after the 'Champion' label cell).
@@ -554,26 +627,29 @@ def build_seed(data, pid_to_uid, out_path):
         main_count += is_main
         player_rows.append(f"({pid_of_name[n]}, {sqlstr(n)}, NULL, NULL, NULL, NULL, {is_main})")
 
-    # QuickScores playoff capture for the recent AHeights seasons (reliably only
-    # the champion; finer finishes are left to the admin snapshot per
-    # scrape-then-confirm). Records already come from SPS and agree with QS.
-    qs_playoff = {}
-    for sps_id, leagues in QS_SEASON_LEAGUES.items():
-        champs = []
-        for night, qlid, _wd in leagues:
-            champ = scrape_qs_champion(qlid)
-            if champ and "Big Dog" in champ:
-                champs.append(f"{night} League Champions")
-        if champs:
-            qs_playoff[sps_id] = " · ".join(champs)
-            print(f"  QuickScores playoff: season {sps_id} -> {qs_playoff[sps_id]}")
+    # QuickScores per-league info (full league name, playoff placement, playoff
+    # games from the bracket) for the wired past seasons + the active season.
+    qs_info = {}  # quickscores_league_id -> {name, placement, games}
+    for _sps, lgs in QS_SEASON_LEAGUES.items():
+        for _night, qlid, _wd in lgs:
+            qs_info[qlid] = qs_league_info(qlid)
+    for _night, _org, qlid, _tid in ACTIVE_SEASON["leagues"]:
+        qs_info[qlid] = qs_league_info(qlid)
 
-    # Active season playoff (QuickScores) — its leagues are hand-built.
-    active_champs = []
-    for night, _org, qlid, _tid in ACTIVE_SEASON["leagues"]:
-        champ = scrape_qs_champion(qlid)
-        if champ and "Big Dog" in champ:
-            active_champs.append(f"{night} League Champions")
+    def season_rollup(lgs):
+        champs = [f"{qs_info[q]['name'] or n} Champions"
+                  for n, q, _w in lgs if qs_info.get(q, {}).get("placement") == "Champion"]
+        return " · ".join(champs) if champs else None
+
+    qs_playoff = {}
+    for sps_id, lgs in QS_SEASON_LEAGUES.items():
+        r = season_rollup(lgs)
+        if r:
+            qs_playoff[sps_id] = r
+            print(f"  QuickScores playoff: season {sps_id} -> {r}")
+    active_champs = [f"{qs_info[q]['name'] or lbl} Champions"
+                     for lbl, _o, q, _t in ACTIVE_SEASON["leagues"]
+                     if qs_info.get(q, {}).get("placement") == "Champion"]
     active_playoff = " · ".join(active_champs) if active_champs else None
     if active_playoff:
         print(f"  QuickScores playoff: active season -> {active_playoff}")
@@ -596,25 +672,34 @@ def build_seed(data, pid_to_uid, out_path):
     # the QS ids; otherwise one synthetic league. Plus the active season's two.
     league_rows = []
     leagues_of_season = {}  # sid -> [(league_pk, weekday_or_None)]
+    league_pk_of_qlid = {}  # quickscores_league_id -> league_pk (for playoff games)
     lid = 1
     for sid, label in oldest_first:
         if sid in QS_SEASON_LEAGUES:
             lst = []
             for night, qlid, wd in QS_SEASON_LEAGUES[sid]:
+                info = qs_info.get(qlid, {})
+                lname = info.get("name") or night
+                pres = format_placement(info.get("placement"))
                 league_rows.append(
-                    f"({lid}, {season_id[sid]}, {sqlstr(night)}, {sqlstr(QS_ORG)}, "
-                    f"{sqlstr(qlid)}, {sqlstr(QS_TEAM_ID)})")
+                    f"({lid}, {season_id[sid]}, {sqlstr(lname)}, {sqlstr(QS_ORG)}, "
+                    f"{sqlstr(qlid)}, {sqlstr(QS_TEAM_ID)}, {sqlstr(pres)})")
+                league_pk_of_qlid[qlid] = lid
                 lst.append((lid, wd))
                 lid += 1
             leagues_of_season[sid] = lst
         else:
             league_rows.append(
-                f"({lid}, {season_id[sid]}, {sqlstr(detect_night(label))}, NULL, NULL, NULL)")
+                f"({lid}, {season_id[sid]}, {sqlstr(detect_night(label))}, NULL, NULL, NULL, NULL)")
             leagues_of_season[sid] = [(lid, None)]
             lid += 1
     for label, org, qlid, tid in ACTIVE_SEASON["leagues"]:
+        info = qs_info.get(qlid, {})
+        lname = info.get("name") or label
+        pres = format_placement(info.get("placement"))
         league_rows.append(
-            f"({lid}, {active_id}, {sqlstr(label)}, {sqlstr(org)}, {sqlstr(qlid)}, {sqlstr(tid)})")
+            f"({lid}, {active_id}, {sqlstr(lname)}, {sqlstr(org)}, {sqlstr(qlid)}, "
+            f"{sqlstr(tid)}, {sqlstr(pres)})")
         lid += 1
 
     def pick_league(sid, gdate):
@@ -644,8 +729,20 @@ def build_seed(data, pid_to_uid, out_path):
             game_rows.append(
                 f"({game_pk}, {slid}, {sqlstr(g['date'])}, {sqlstr(g['time'])}, "
                 f"{sqlstr(g['field'])}, {sqlstr(g['opponent'])}, {sqlint(g['our_score'])}, "
-                f"{sqlint(g['opp_score'])}, {sqlstr(g['status'])})")
+                f"{sqlint(g['opp_score'])}, {sqlstr(g['status'])}, 0, NULL)")
             game_pk += 1
+        # QuickScores bracket playoff games for wired past seasons (is_playoff=1).
+        if sid in QS_SEASON_LEAGUES:
+            for night, qlid, _wd in QS_SEASON_LEAGUES[sid]:
+                lpk = league_pk_of_qlid.get(qlid)
+                if lpk is None:
+                    continue
+                for pg in qs_info.get(qlid, {}).get("games", []):
+                    game_rows.append(
+                        f"({game_pk}, {lpk}, {sqlstr(pg['date'])}, {sqlstr(pg['time'])}, "
+                        f"{sqlstr(pg['field'])}, {sqlstr(pg['opponent'])}, {sqlint(pg['our_score'])}, "
+                        f"{sqlint(pg['opp_score'])}, 'final', 1, {sqlstr(pg['playoff_round'])})")
+                    game_pk += 1
         for gid, rows in data["boxes"].get(sid, {}).items():
             gpk = gid_to_pk.get((sid, gid))
             if gpk is None:
@@ -700,10 +797,10 @@ def build_seed(data, pid_to_uid, out_path):
                     "final_ties, playoff_result, is_active, sort_order, sps_season_id", season_rows)
     lines.append("")
     lines += insert("season_leagues", "id, season_id, league_label, quickscores_org_dir, "
-                    "quickscores_league_id, quickscores_team_id", league_rows)
+                    "quickscores_league_id, quickscores_team_id, playoff_result", league_rows)
     lines.append("")
     lines += insert("games", "id, season_league_id, date, time, field, opponent, our_score, "
-                    "opp_score, status", game_rows)
+                    "opp_score, status, is_playoff, playoff_round", game_rows)
     lines.append("")
     lines += insert("game_player_stats", "id, game_id, player_id, gp, ab, r, h, b1, b2, b3, hr, "
                     "bb, rbi, so, sac, sb", gps_rows)
