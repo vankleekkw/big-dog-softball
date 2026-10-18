@@ -24,7 +24,7 @@ const fmtVal = (k, v) => (v == null ? "—" : RATE_KEYS.has(k) ? fmtRate(v) : St
 const statKeysOf = (o) => Object.keys(o).filter((k) => !NON_STAT.has(k) && !HIDDEN.has(k));
 
 function teamTiles(team) {
-  const order = ["gp", "ab", "r", "h", "hr", "avg", "obp", "slg", "ops"];
+  const order = ["gp", "r", "h", "avg", "obp", "slg", "ops"];
   return `<div class="stat-row">${order.filter((k) => team[k] !== undefined).map((k) => `
     <div class="stat-tile"><div class="value">${fmtVal(k, team[k])}</div><div class="label">${label(k)}</div></div>
   `).join("")}</div>`;
