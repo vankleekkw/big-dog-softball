@@ -625,6 +625,8 @@ function editGame(id) {
   form.our_score.value = g.our_score ?? "";
   form.opp_score.value = g.opp_score ?? "";
   form.status.value = g.status || "scheduled";
+  form.photo_url.value = g.photo_url || "";
+  form.photo_caption.value = g.photo_caption || "";
   document.getElementById("game-form-title").textContent = "Edit Game";
 }
 
@@ -648,6 +650,8 @@ async function onGameFormSubmit(e) {
     our_score: numOrNull(form.our_score.value),
     opp_score: numOrNull(form.opp_score.value),
     status: form.status.value,
+    photo_url: form.photo_url.value.trim() || null,
+    photo_caption: form.photo_caption.value.trim() || null,
   };
   try {
     if (id) await api(`/api/admin/games/${id}`, { method: "PATCH", body: JSON.stringify(payload) });

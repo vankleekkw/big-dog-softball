@@ -331,7 +331,8 @@ table.stats thead th { box-shadow: inset 0 -2px 0 rgba(242,106,33,.45); }
 .game-photos { display: grid; gap: var(--gap); margin: 14px 0 8px;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
 .game-photo { margin: 0; }
-.game-photo img { width: 100%; border-radius: var(--radius); border: 1px solid var(--border);
+.game-photo img { width: 100%; aspect-ratio: 3 / 2; object-fit: cover;
+  border-radius: var(--radius); border: 1px solid var(--border);
   box-shadow: 0 3px 14px rgba(0,0,0,.45); }
 .game-photo figcaption { margin-top: 6px; font-size: .85rem; color: var(--text-muted);
   font-weight: 700; text-align: center; }

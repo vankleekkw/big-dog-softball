@@ -1,7 +1,7 @@
 // /api/admin/games/:id — PATCH partial update, DELETE.
 import { json, badRequest, notFound, serverError, parseId } from "../../../_lib/http.js";
 
-const WRITABLE_FIELDS = ["season_league_id", "date", "time", "field", "opponent", "our_score", "opp_score", "status"];
+const WRITABLE_FIELDS = ["season_league_id", "date", "time", "field", "opponent", "our_score", "opp_score", "status", "photo_url", "photo_caption"];
 
 export async function onRequestPatch({ request, env, params }) {
   try {

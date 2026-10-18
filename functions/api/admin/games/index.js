@@ -2,7 +2,7 @@
 // ?season_id=), POST create.
 import { json, badRequest, serverError } from "../../../_lib/http.js";
 
-const WRITABLE_FIELDS = ["season_league_id", "date", "time", "field", "opponent", "our_score", "opp_score", "status"];
+const WRITABLE_FIELDS = ["season_league_id", "date", "time", "field", "opponent", "our_score", "opp_score", "status", "photo_url", "photo_caption"];
 
 export async function onRequestGet({ request, env }) {
   try {
