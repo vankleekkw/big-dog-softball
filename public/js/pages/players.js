@@ -47,22 +47,17 @@ function rosterTile(p) {
 }
 
 function render(players) {
+  // Only players flagged for a bio card are shown. That flag is auto-seeded at
+  // career AB >= 100 during migration and is a manual toggle in the admin panel.
   const mains = players.filter((p) => !!p.is_main_player);
-  const rest = players.filter((p) => !p.is_main_player);
 
   const mainsHtml = mains.length
     ? `<div class="card-grid">${mains.map(mainPlayerCard).join("")}</div>`
-    : `<p class="muted">No featured player bios yet.</p>`;
-
-  const restHtml = rest.length
-    ? `<h2 style="margin-top:32px">Meet the Players</h2>
-       <div class="photo-grid">${rest.map(rosterTile).join("")}</div>`
-    : "";
+    : `<div class="card center"><p class="muted">No player bios yet. Flag players in the admin panel to feature them here.</p></div>`;
 
   app.innerHTML = `
     <h1>Players</h1>
     ${mainsHtml}
-    ${restHtml}
   `;
 }
 

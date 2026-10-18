@@ -25,8 +25,6 @@ function render(seasons) {
        still felt like a good idea. A lot of wins, a lot of losses, and at least one tie
        nobody can fully explain. Tap a season for its games, photo, and highlights.</p>
     <p class="edit-note">Editable: swap this intro for the real origin story / team legend / why the name is what it is.</p>
-    <p class="muted">Looking for the record book and dubious honors? That lives on the
-       <a href="/hof.html">Hall of Fame</a> now.</p>
 
     ${seasons.length ? `<div class="table-wrap" style="margin:20px 0">
       <table class="stats">

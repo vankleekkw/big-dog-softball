@@ -9,7 +9,6 @@ setLoading(app, "Dusting off the trophy case…");
 // Career record book categories (what actually matters to this team).
 const RECORD_CATS = [
   { key: "hr", label: "Home Runs", rate: false },
-  { key: "ab", label: "At-Bats", rate: false },
   { key: "b2", label: "Doubles", rate: false },
   { key: "b3", label: "Triples", rate: false },
   { key: "obp", label: "On-Base %", rate: true },

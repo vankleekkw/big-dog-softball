@@ -41,6 +41,7 @@ re-parsing are cheap and a mid-run failure resumes where it left off.
 """
 
 import argparse
+import datetime
 import os
 import re
 import sqlite3
@@ -69,6 +70,18 @@ ACTIVE_SEASON = {
         ("Wednesday", "ahpd", "1740394", "15275022"),
         ("Friday", "ahpd", "1740619", "15275022"),
     ],
+}
+
+# Recent AHeights seasons that also exist on QuickScores (OrgDir ahpd), split
+# Wednesday + Friday. Wiring these lets the admin snapshot/sync against the
+# official source and lets us capture playoff results SPS doesn't have. Keyed by
+# SPS season id -> [(night_label, quickscores_league_id)]. Weekday 0=Mon..6=Sun.
+QS_ORG = "ahpd"
+QS_TEAM_ID = "15275022"
+QS_SEASON_LEAGUES = {
+    21182: [("Wednesday", "1706775", 2), ("Friday", "1706399", 4)],  # 2026 Summer AHeights
+    21002: [("Wednesday", "1616098", 2), ("Friday", "1616672", 4)],  # 2025 Fall AHeights
+    20926: [("Wednesday", "1580741", 2), ("Friday", "1580747", 4)],  # 2025 Summer AHeights
 }
 
 # header label -> db column. First column header is "PLAYER" or "Team/Season".
@@ -312,6 +325,26 @@ def scrape_box(sid, gid):
     return out
 
 
+def scrape_qs_champion(league_id):
+    """Best-effort: the playoff Champion team name from a QuickScores league's
+    ResultsDisplay bracket (the <td> right after the 'Champion' label cell).
+    Returns the team name or None."""
+    url = f"https://www.quickscores.com/Orgs/ResultsDisplay.php?OrgDir={QS_ORG}&LeagueID={league_id}"
+    try:
+        sp = soup(url)
+    except Exception as e:
+        print(f"  ! QuickScores champion fetch failed for {league_id}: {e}")
+        return None
+    if sp is None:
+        return None
+    for td in sp.find_all("td"):
+        if norm(td.get_text()) == "Champion":
+            nxt = td.find_next("td")
+            if nxt:
+                return norm(nxt.get_text())
+    return None
+
+
 # --- orchestration: scrape everything (resumable via httpcache) ---------------
 
 def scrape_all(limit_seasons=None):
@@ -521,6 +554,20 @@ def build_seed(data, pid_to_uid, out_path):
         main_count += is_main
         player_rows.append(f"({pid_of_name[n]}, {sqlstr(n)}, NULL, NULL, NULL, NULL, {is_main})")
 
+    # QuickScores playoff capture for the recent AHeights seasons (reliably only
+    # the champion; finer finishes are left to the admin snapshot per
+    # scrape-then-confirm). Records already come from SPS and agree with QS.
+    qs_playoff = {}
+    for sps_id, leagues in QS_SEASON_LEAGUES.items():
+        champs = []
+        for night, qlid, _wd in leagues:
+            champ = scrape_qs_champion(qlid)
+            if champ and "Big Dog" in champ:
+                champs.append(f"{night} League Champions")
+        if champs:
+            qs_playoff[sps_id] = " · ".join(champs)
+            print(f"  QuickScores playoff: season {sps_id} -> {qs_playoff[sps_id]}")
+
     # seasons (oldest id first) + active
     season_id = {}
     season_rows = []
@@ -529,26 +576,51 @@ def build_seed(data, pid_to_uid, out_path):
         rec = data["records"].get(sid, {})
         season_rows.append(
             f"({i}, {sqlstr(label)}, NULL, NULL, {sqlint(rec.get('w'))}, {sqlint(rec.get('l'))}, "
-            f"{sqlint(rec.get('t'))}, NULL, 0, {sort_order[sid]}, {sid})")
+            f"{sqlint(rec.get('t'))}, {sqlstr(qs_playoff.get(sid))}, 0, {sort_order[sid]}, {sid})")
     active_id = n_hist + 1
     season_rows.append(
         f"({active_id}, {sqlstr(ACTIVE_SEASON['name'])}, NULL, NULL, NULL, NULL, NULL, NULL, "
         f"1, {n_hist + 1}, {ACTIVE_SEASON['sps_season_id']})")
 
-    # season_leagues: one synthetic per historical season + active's two
+    # season_leagues: for seasons wired to QuickScores, real Wed/Fri leagues with
+    # the QS ids; otherwise one synthetic league. Plus the active season's two.
     league_rows = []
-    league_id_of_season = {}
+    leagues_of_season = {}  # sid -> [(league_pk, weekday_or_None)]
     lid = 1
     for sid, label in oldest_first:
-        league_id_of_season[sid] = lid
-        league_rows.append(
-            f"({lid}, {season_id[sid]}, {sqlstr(detect_night(label))}, NULL, NULL, NULL)")
-        lid += 1
-    active_league_start = lid
+        if sid in QS_SEASON_LEAGUES:
+            lst = []
+            for night, qlid, wd in QS_SEASON_LEAGUES[sid]:
+                league_rows.append(
+                    f"({lid}, {season_id[sid]}, {sqlstr(night)}, {sqlstr(QS_ORG)}, "
+                    f"{sqlstr(qlid)}, {sqlstr(QS_TEAM_ID)})")
+                lst.append((lid, wd))
+                lid += 1
+            leagues_of_season[sid] = lst
+        else:
+            league_rows.append(
+                f"({lid}, {season_id[sid]}, {sqlstr(detect_night(label))}, NULL, NULL, NULL)")
+            leagues_of_season[sid] = [(lid, None)]
+            lid += 1
     for label, org, qlid, tid in ACTIVE_SEASON["leagues"]:
         league_rows.append(
             f"({lid}, {active_id}, {sqlstr(label)}, {sqlstr(org)}, {sqlstr(qlid)}, {sqlstr(tid)})")
         lid += 1
+
+    def pick_league(sid, gdate):
+        leagues = leagues_of_season[sid]
+        if len(leagues) == 1:
+            return leagues[0][0]
+        wd = None
+        if gdate:
+            try:
+                wd = datetime.date.fromisoformat(gdate).weekday()
+            except Exception:
+                wd = None
+        for lpk, lwd in leagues:
+            if lwd == wd:
+                return lpk
+        return leagues[0][0]  # default to the first (Wednesday) league
 
     # games + game_player_stats
     game_rows, gps_rows = [], []
@@ -556,8 +628,8 @@ def build_seed(data, pid_to_uid, out_path):
     gps_pk = 1
     gid_to_pk = {}
     for sid, label in oldest_first:
-        slid = league_id_of_season[sid]
         for g in data["season_games"].get(sid, []):
+            slid = pick_league(sid, g["date"])
             gid_to_pk[(sid, g["gameID"])] = game_pk
             game_rows.append(
                 f"({game_pk}, {slid}, {sqlstr(g['date'])}, {sqlstr(g['time'])}, "

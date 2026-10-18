@@ -41,8 +41,8 @@ function leadersSection(leaders) {
   if (!leaders) return "";
   const tiles = [
     leaderTile("avg", "AVG Leader", leaders.avg),
-    leaderTile("hr", "HR Leader", leaders.hr),
-    leaderTile("h", "Hits Leader", leaders.h),
+    leaderTile("slg", "SLG Leader", leaders.slg),
+    leaderTile("obp", "OBP Leader", leaders.obp),
   ].filter(Boolean).join("");
   return tiles ? `<h2>Leaders</h2><div class="stat-row">${tiles}</div>` : "";
 }
