@@ -43,7 +43,7 @@ export async function setActiveSeason(db, seasonId, extraSetSql = "", extraValue
 }
 
 export async function getSeasonLeagues(db, seasonId) {
-  const res = await db.prepare("SELECT * FROM season_leagues WHERE season_id = ?").bind(seasonId).all();
+  const res = await db.prepare("SELECT * FROM season_leagues WHERE season_id = ? ORDER BY id ASC").bind(seasonId).all();
   return res.results;
 }
 

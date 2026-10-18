@@ -131,3 +131,21 @@ CREATE TABLE season_batting (
   UNIQUE(season_id, player_id)
 );
 CREATE INDEX idx_season_batting_player ON season_batting(player_id);
+
+-- Admin-editable site-wide copy blocks (brand/tagline + a handful of blurbs
+-- originally left as placeholder text). Small, fixed set of keys -- not a
+-- generic CMS for every string on the site.
+CREATE TABLE site_copy (
+  key   TEXT PRIMARY KEY,
+  label TEXT NOT NULL,
+  value TEXT NOT NULL
+);
+
+INSERT INTO site_copy (key, label, value) VALUES
+('header_brand', 'Header / footer brand name', 'Big Dog Gotta Eat'),
+('footer_tagline', 'Footer tagline', 'Chicagoland 12″ softball'),
+('home_blurb', 'Home — "Who We Are" card', 'Big Dog Gotta Eat: a men''s slow-pitch softball team that takes the softball very seriously and basically nothing else. 12″ softball, played with zero shame and occasional defense.'),
+('history_intro', 'History — intro paragraph', '46 seasons of Big Dog Gotta Eat, dating back to roughly 2008, when 12″ softball still felt like a good idea. A lot of wins, a lot of losses, and at least one tie nobody can fully explain. Tap a season for its games, photo, and highlights.'),
+('hof_longest_tenure', 'Hall of Fame — Longest Tenure', 'Editable: who has shown up the most seasons? Put the obvious answer here.'),
+('hof_most_nachos', 'Hall of Fame — Most Nachos, Single Rain Delay', 'Editable: name, nacho count, and a lie about how it happened.'),
+('hof_best_excuse', 'Hall of Fame — Best Excuse For A Loss', 'Editable: "the sun was in my eyes" is already taken.');

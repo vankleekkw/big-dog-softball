@@ -1,10 +1,16 @@
-import { mountChrome, api, setLoading, esc } from "../common.js";
+import { mountChrome, api, setLoading, esc, getSiteCopy } from "../common.js";
 import { fmtRate } from "../stats.js";
 
 mountChrome("hof");
 
 const app = document.getElementById("app");
 setLoading(app, "Dusting off the trophy case…");
+
+const FALLBACK = {
+  hof_longest_tenure: "Who has shown up the most seasons? Put the obvious answer here.",
+  hof_most_nachos: "Name, nacho count, and a lie about how it happened.",
+  hof_best_excuse: '"The sun was in my eyes" is already taken.',
+};
 
 // Career record book categories (what actually matters to this team).
 const RECORD_CATS = [
@@ -56,7 +62,7 @@ function seasonHonors(seasons) {
     </div>`;
 }
 
-function render(seasons, career) {
+function render(seasons, career, copy) {
   const leaders = career && career.leaders ? career.leaders : {};
   const minAB = career ? career.qualifyMinAB : null;
   const recordBook = RECORD_CATS.map((c) => leaderTile(c, leaders[c.key])).filter(Boolean).join("");
@@ -74,19 +80,20 @@ function render(seasons, career) {
     <h2 style="margin-top:32px">Dubious Honors</h2>
     <p class="muted">Not officially sanctioned by anyone. Team in-joke slots — fill them in.</p>
     <div class="card-grid">
-      <div class="card"><h3>Longest Tenure</h3><p class="edit-note">Editable: who has shown up the most seasons? Put the obvious answer here.</p></div>
-      <div class="card"><h3>Most Nachos, Single Rain Delay</h3><p class="edit-note">Editable: name, nacho count, and a lie about how it happened.</p></div>
-      <div class="card"><h3>Best Excuse For A Loss</h3><p class="edit-note">Editable: "the sun was in my eyes" is already taken.</p></div>
+      <div class="card"><h3>Longest Tenure</h3><p>${esc(copy.hof_longest_tenure || FALLBACK.hof_longest_tenure)}</p></div>
+      <div class="card"><h3>Most Nachos, Single Rain Delay</h3><p>${esc(copy.hof_most_nachos || FALLBACK.hof_most_nachos)}</p></div>
+      <div class="card"><h3>Best Excuse For A Loss</h3><p>${esc(copy.hof_best_excuse || FALLBACK.hof_best_excuse)}</p></div>
     </div>
   `;
 }
 
 try {
-  const [seasons, career] = await Promise.all([
+  const [seasons, career, copy] = await Promise.all([
     api("/api/seasons").catch(() => []),
     api("/api/stats?season=career").catch(() => null),
+    getSiteCopy(),
   ]);
-  render(Array.isArray(seasons) ? seasons : [], career);
+  render(Array.isArray(seasons) ? seasons : [], career, copy);
 } catch (err) {
   app.innerHTML = `<div class="card center"><h3>Couldn't open the trophy case</h3>
     <p class="muted">${esc(err.message || "Temporarily unavailable.")}</p></div>`;

@@ -28,7 +28,7 @@ export function mountChrome(active = "", opts = {}) {
   document.body.insertAdjacentHTML("afterbegin", `
     <header class="site-header">
       <nav class="nav">
-        <a class="brand" href="/"><span class="logo-chip"><img src="${LOGO}" alt="Big Dog Gotta Eat logo"></span>Big Dog Gotta Eat</a>
+        <a class="brand" href="/"><span class="logo-chip"><img src="${LOGO}" alt="Big Dog Gotta Eat logo"></span><span id="brand-text">Big Dog Gotta Eat</span></a>
         <div class="nav-dropdown"><select id="site-nav" aria-label="Go to section">${options}</select></div>
       </nav>
     </header>
@@ -52,10 +52,18 @@ export function mountChrome(active = "", opts = {}) {
           <img src="/assets/chicago-flag.svg" alt="" class="flag">
           <img src="/assets/blackout-usa.svg" alt="" class="flag">
         </div>
-        <div>Big Dog Gotta Eat &middot; Chicagoland 12&Prime; softball &middot;
+        <div><span id="footer-brand">Big Dog Gotta Eat</span> &middot; <span id="footer-tagline">Chicagoland 12&Prime; softball</span> &middot;
           <a href="/admin/">Admin</a></div>
       </div>
     </footer>`);
+
+  getSiteCopy().then((copy) => {
+    if (copy.header_brand) {
+      document.getElementById("brand-text").textContent = copy.header_brand;
+      document.getElementById("footer-brand").textContent = copy.header_brand;
+    }
+    if (copy.footer_tagline) document.getElementById("footer-tagline").textContent = copy.footer_tagline;
+  });
 
   registerSW();
 }
@@ -75,6 +83,16 @@ export async function api(path, opts) {
   const body = ct.includes("application/json") ? await res.json() : await res.text();
   if (!res.ok) throw new Error((body && body.error) || `HTTP ${res.status}`);
   return body;
+}
+
+// Site-wide copy blocks (brand/tagline + a few blurbs), fetched once per page
+// load and shared by mountChrome + any page that needs one. Callers should
+// treat a rejected/empty result as "keep the hardcoded fallback" — this must
+// never break a page.
+let siteCopyPromise = null;
+export function getSiteCopy() {
+  if (!siteCopyPromise) siteCopyPromise = api("/api/site-copy").catch(() => ({}));
+  return siteCopyPromise;
 }
 
 export function setLoading(el, msg = "Loading…") {

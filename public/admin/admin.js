@@ -40,7 +40,7 @@ function showStatus(msg, ok = false) {
 // ---- tab wiring --------------------------------------------------------------
 
 const tabLoaded = new Set();
-const loaders = { players: initPlayers, rosters: initRosters, seasons: initSeasons, games: initGames, stats: initStats };
+const loaders = { players: initPlayers, rosters: initRosters, seasons: initSeasons, games: initGames, stats: initStats, "site-copy": initSiteCopy };
 
 function switchTab(name) {
   const sel = document.getElementById("admin-nav");
@@ -765,6 +765,42 @@ async function saveGameStatsRow(gameId, playerId, row) {
   } catch (err) {
     resultEl.textContent = err.message;
     resultEl.className = "admin-toast err";
+  }
+}
+
+// ---- Site Copy tab -----------------------------------------------------------
+
+async function initSiteCopy() {
+  const list = document.getElementById("site-copy-list");
+  try {
+    const rows = await api("/api/admin/site-copy");
+    list.innerHTML = rows.map((r) => `
+      <div class="admin-form" data-key="${escapeHtml(r.key)}">
+        <label>${escapeHtml(r.label)}
+          <textarea rows="3">${escapeHtml(r.value)}</textarea>
+        </label>
+        <div class="admin-form-actions">
+          <button class="btn sm" type="button" data-action="save">Save</button>
+        </div>
+      </div>
+    `).join("");
+    list.querySelectorAll("[data-key]").forEach((row) => {
+      row.querySelector('[data-action="save"]').addEventListener("click", () => saveSiteCopy(row));
+    });
+  } catch (err) {
+    showStatus(err.message);
+    list.innerHTML = '<p class="muted">Failed to load site copy.</p>';
+  }
+}
+
+async function saveSiteCopy(row) {
+  const key = row.dataset.key;
+  const value = row.querySelector("textarea").value.trim();
+  try {
+    await api(`/api/admin/site-copy/${encodeURIComponent(key)}`, { method: "PATCH", body: JSON.stringify({ value }) });
+    showStatus("Saved.", true);
+  } catch (err) {
+    showStatus(err.message);
   }
 }
 

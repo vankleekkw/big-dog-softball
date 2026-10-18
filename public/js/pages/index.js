@@ -1,4 +1,4 @@
-import { mountChrome, api, setLoading, esc, resultPill } from "../common.js";
+import { mountChrome, api, setLoading, esc, resultPill, getSiteCopy } from "../common.js";
 
 mountChrome("");
 
@@ -64,11 +64,12 @@ function thisSeason(games, seasonName) {
     </section>`;
 }
 
-function highlightSection(photo, seasonId) {
+function highlightSection(photo, seasonId, seasonName) {
   if (!photo || !photo.photo_url) return "";
-  const cap = photo.photo_caption || photo.playoff_round || "Season highlight";
+  const label = photo.photo_caption || photo.playoff_round || "Season highlight";
+  const cap = seasonName ? `${seasonName} · ${label}` : label;
   return `
-    <section class="game-photos" style="margin-top:var(--gap);max-width:480px">
+    <section style="margin-top:var(--gap);max-width:480px;margin-left:auto;margin-right:auto">
       <figure class="game-photo">
         <a href="/season.html?id=${encodeURIComponent(seasonId)}">
           <img src="${esc(photo.photo_url)}" alt="${esc(cap)}" loading="lazy">
@@ -78,7 +79,7 @@ function highlightSection(photo, seasonId) {
     </section>`;
 }
 
-function bottomCards(career) {
+function bottomCards(career, copy) {
   return `
     <section class="card-grid" style="margin-top:var(--gap)">
       <div class="card">
@@ -89,28 +90,28 @@ function bottomCards(career) {
       </div>
       <div class="card">
         <h3>Who We Are</h3>
-        <p>Big Dog Gotta Eat: a men's slow-pitch softball team that takes the softball very seriously
-           and basically nothing else. 12&Prime; softball, played with zero shame and occasional defense.</p>
-        <p class="edit-note">Editable: swap this blurb for the real team bio / inside joke of choice.</p>
+        <p>${esc(copy.home_blurb)}</p>
       </div>
     </section>`;
 }
 
-function render(data, games) {
+function render(data, games, copy) {
   app.innerHTML = `
     ${heroSection(data)}
-    ${data.season ? highlightSection(data.highlightPhoto, data.season.id) : ""}
+    ${data.season ? highlightSection(data.highlightPhoto, data.season.id, data.season.name) : ""}
     ${thisSeason(games, data.season ? data.season.name : "")}
-    ${bottomCards(data.career)}
+    ${bottomCards(data.career, copy)}
   `;
 }
 
 try {
-  const [data, sched] = await Promise.all([
+  const [data, sched, copy] = await Promise.all([
     api("/api/overview"),
     api("/api/schedule?season=active").catch(() => ({ games: [] })),
+    getSiteCopy(),
   ]);
-  render(data, Array.isArray(sched.games) ? sched.games : []);
+  copy.home_blurb = copy.home_blurb || "Big Dog Gotta Eat: a men's slow-pitch softball team that takes the softball very seriously and basically nothing else. 12″ softball, played with zero shame and occasional defense.";
+  render(data, Array.isArray(sched.games) ? sched.games : [], copy);
 } catch (err) {
   app.innerHTML = `<div class="card center">
       <h3>Couldn't load the latest</h3>
