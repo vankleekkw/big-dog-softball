@@ -23,21 +23,22 @@
 <body class="admin-body">
 <header class="site-header">
   <nav class="nav">
-    <a class="brand" href="/"><img src="/assets/logo.jpg" alt="Big Dog Gotta Eat logo">Big Dog Gotta Eat — Admin</a>
-    <div class="links"><a href="/">Back to site</a></div>
+    <a class="brand" href="/"><span class="logo-chip"><img src="/assets/logo.jpg" alt="Big Dog Gotta Eat logo"></span>Big Dog Admin</a>
+    <div class="admin-headnav">
+      <select id="admin-nav" aria-label="Admin section">
+        <option value="players">Players</option>
+        <option value="rosters">Rosters</option>
+        <option value="seasons">Seasons &amp; Leagues</option>
+        <option value="games">Games</option>
+        <option value="stats">Enter Game Stats</option>
+      </select>
+      <a class="btn secondary sm" href="/">Back to site</a>
+    </div>
   </nav>
 </header>
 
 <main class="container section">
   <div id="admin-status" class="admin-banner" hidden></div>
-
-  <nav class="admin-tabs" role="tablist" aria-label="Admin sections">
-    <button class="admin-tab active" data-tab="players" type="button">Players</button>
-    <button class="admin-tab" data-tab="rosters" type="button">Rosters</button>
-    <button class="admin-tab" data-tab="seasons" type="button">Seasons &amp; Leagues</button>
-    <button class="admin-tab" data-tab="games" type="button">Games</button>
-    <button class="admin-tab" data-tab="stats" type="button">Enter Game Stats</button>
-  </nav>
 
   <!-- ---- Players ---- -->
   <section id="tab-players" class="admin-panel" data-panel="players">

@@ -43,7 +43,8 @@ const tabLoaded = new Set();
 const loaders = { players: initPlayers, rosters: initRosters, seasons: initSeasons, games: initGames, stats: initStats };
 
 function switchTab(name) {
-  document.querySelectorAll(".admin-tab").forEach((t) => t.classList.toggle("active", t.dataset.tab === name));
+  const sel = document.getElementById("admin-nav");
+  if (sel && sel.value !== name) sel.value = name;
   document.querySelectorAll(".admin-panel").forEach((p) => { p.hidden = p.dataset.panel !== name; });
   if (!tabLoaded.has(name)) {
     tabLoaded.add(name);
@@ -51,9 +52,7 @@ function switchTab(name) {
   }
 }
 
-document.querySelectorAll(".admin-tab").forEach((tab) => {
-  tab.addEventListener("click", () => switchTab(tab.dataset.tab));
-});
+document.getElementById("admin-nav").addEventListener("change", (e) => switchTab(e.target.value));
 
 // ---- shared caches ------------------------------------------------------------
 

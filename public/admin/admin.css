@@ -10,12 +10,15 @@
 }
 .admin-banner.ok { background: rgba(67,192,106,.15); color: var(--win); border-color: var(--win); }
 
-.admin-tabs { display: flex; gap: 6px; flex-wrap: wrap; margin: 20px 0; border-bottom: 1px solid var(--border); padding-bottom: 10px; }
-.admin-tab {
-  background: var(--ink-3); color: var(--text-muted); border: 1px solid var(--border);
-  padding: 8px 14px; border-radius: var(--radius-sm); font-weight: 700; cursor: pointer; font-size: .9rem;
+/* Section nav as a top-right dropdown (replaces the old tab row). */
+.admin-headnav { margin-left: auto; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+#admin-nav {
+  -webkit-appearance: none; appearance: none; cursor: pointer; font-weight: 700; font-size: 16px;
+  background-color: var(--accent); color: #1a1205; border: none; border-radius: var(--radius-sm);
+  padding: 9px 34px 9px 14px; min-height: 40px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%231a1205' stroke-width='2' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 12px center;
 }
-.admin-tab.active { background: var(--accent); color: var(--ink); border-color: var(--accent); }
 
 .admin-panel { padding: 8px 0 40px; }
 
@@ -71,3 +74,27 @@ table.stats-entry tr:nth-child(even) { background: rgba(255,255,255,.02); }
 .admin-toast.err { color: var(--loss); }
 
 .sync-errors { margin-top: 8px; font-size: .85rem; color: var(--loss); white-space: pre-wrap; }
+
+/* iOS: inputs < 16px trigger zoom on focus. */
+.admin-form input, .admin-form select, .admin-form textarea { font-size: 16px; }
+
+/* ---- Mobile: distinct, decluttered layout ---- */
+@media (max-width: 640px) {
+  .nav { flex-wrap: wrap; row-gap: 8px; }
+  .admin-headnav { width: 100%; margin-left: 0; }
+  #admin-nav { flex: 1; }                       /* full-width section picker */
+  .admin-headnav .btn { flex-shrink: 0; }
+  .admin-body main.container { padding-left: 12px; padding-right: 12px; }
+
+  /* Stack the two-column panels and form rows. */
+  .admin-grid-2 { gap: 16px; }
+  .admin-form-row { grid-template-columns: 1fr 1fr; }
+  .admin-inline select { min-width: 0; width: 100%; }
+  .admin-inline { display: flex; width: 100%; margin-right: 0; }
+
+  /* Rows: name on top, actions below — no cramped side-by-side. */
+  .admin-row { gap: 6px; }
+  .admin-row .admin-row-actions { width: 100%; }
+  .admin-row .admin-row-actions .btn { flex: 1; }
+  .admin-list { max-height: none; }
+}
