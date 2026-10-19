@@ -103,6 +103,50 @@ export async function getSeasonBattingWithPlayers(db, seasonId) {
   });
 }
 
+// Every player's batting line for every season (one row per player-per-season,
+// not summed to career). Historical seasons come straight from season_batting;
+// the active season (which has no season_batting rows yet) is aggregated live
+// from game_player_stats, same rule as getSeasonBattingRows. Used for
+// single-season leaderboards that scan across all seasons at once.
+//
+// realSeasonsOnly excludes the Tournaments/Preseason pseudo-seasons (sort_order
+// <= 0 by convention) — those are multi-year combined buckets, not a single
+// season, so they'd otherwise swamp genuine single-season leaders.
+export async function getAllSeasonBattingWithPlayers(db, { realSeasonsOnly = false } = {}) {
+  const seasonsRes = await db.prepare("SELECT id, name, sort_order FROM seasons").all();
+  const seasons = realSeasonsOnly ? seasonsRes.results.filter((s) => s.sort_order > 0) : seasonsRes.results;
+  const seasonNameById = new Map(seasons.map((s) => [s.id, s.name]));
+  const allowedSeasonIds = new Set(seasons.map((s) => s.id));
+
+  const historicalAll = await db
+    .prepare(
+      `SELECT season_id, player_id, gp, ab, r, h, b1, b2, b3, hr, bb, rbi, so, sac, sb
+       FROM season_batting`
+    )
+    .all();
+  const historical = { results: historicalAll.results.filter((r) => allowedSeasonIds.has(r.season_id)) };
+  const coveredSeasonIds = new Set(historical.results.map((r) => r.season_id));
+
+  const active = await getActiveSeason(db);
+  let activeRows = [];
+  if (active && allowedSeasonIds.has(active.id) && !coveredSeasonIds.has(active.id)) {
+    const live = await getSeasonBattingRows(db, active.id);
+    activeRows = live.map((r) => ({ ...r, season_id: active.id }));
+  }
+
+  const allRows = [...historical.results, ...activeRows];
+  // Fetch every player rather than IN (...player_ids): this scan easily
+  // exceeds D1's bound-parameter limit across 15+ years of rosters.
+  const playersRes = await db.prepare("SELECT id, name FROM players").all();
+  const playerById = new Map(playersRes.results.map((p) => [p.id, p]));
+
+  return allRows.map((r) => ({
+    ...r,
+    season_name: seasonNameById.get(r.season_id) || "Unknown",
+    name: playerById.get(r.player_id) ? playerById.get(r.player_id).name : "Unknown",
+  }));
+}
+
 // Career raw counts for one player: sum of season_batting rows for that
 // player, PLUS game_player_stats aggregated for any season that has no
 // season_batting rows at all (so a season is never double-counted).

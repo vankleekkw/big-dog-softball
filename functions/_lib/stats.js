@@ -36,6 +36,28 @@ export function computeLeaders(players, cats, qualifyPct = 0.5) {
   return { leaders, minAB };
 }
 
+// Same AB-qualifier rule as computeLeaders, but returns the top N rows per
+// category instead of just the best one. Built for single-season (not career)
+// leaderboards, where `players` is one row per player-per-season — each row
+// needs a `season_name` the caller wants surfaced alongside the value.
+export function computeTopLeaders(players, cats, n = 5, qualifyPct = 0.5) {
+  const maxAB = players.reduce((m, p) => Math.max(m, p.ab || 0), 0);
+  const minAB = maxAB * qualifyPct;
+  const leaders = {};
+  for (const c of cats) {
+    const pool = c.rate ? players.filter((p) => (p.ab || 0) >= minAB && (p.ab || 0) > 0) : players;
+    leaders[c.key] = [...pool]
+      .sort((a, b) => Number(b[c.key] || 0) - Number(a[c.key] || 0))
+      .slice(0, n)
+      .map((p) => ({
+        player_id: p.player_id, name: p.name,
+        season_id: p.season_id, season_name: p.season_name,
+        value: Number(p[c.key] || 0),
+      }));
+  }
+  return { leaders, minAB };
+}
+
 // Attach avg/slg/obp/ops (numbers, 0 when undefined). Returns a NEW object.
 export function withRates(s) {
   const ab = s.ab || 0, bb = s.bb || 0, sac = s.sac || 0, h = s.h || 0;

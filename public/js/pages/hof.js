@@ -14,9 +14,20 @@ const FALLBACK = {
 
 // Career record book categories (what actually matters to this team).
 const RECORD_CATS = [
-  { key: "hr", label: "Home Runs", rate: false },
+  { key: "h", label: "Hits", rate: false },
   { key: "b2", label: "Doubles", rate: false },
   { key: "b3", label: "Triples", rate: false },
+  { key: "hr", label: "Home Runs", rate: false },
+  { key: "obp", label: "On-Base %", rate: true },
+  { key: "slg", label: "Slugging %", rate: true },
+];
+
+// Same categories, same order, for the single-season leaderboard.
+const SEASON_CATS = [
+  { key: "h", label: "Hits", rate: false },
+  { key: "b2", label: "Doubles", rate: false },
+  { key: "b3", label: "Triples", rate: false },
+  { key: "hr", label: "Home Runs", rate: false },
   { key: "obp", label: "On-Base %", rate: true },
   { key: "slg", label: "Slugging %", rate: true },
 ];
@@ -31,6 +42,20 @@ function leaderTile(cat, leader) {
         <a href="/player.html?id=${encodeURIComponent(leader.player_id)}">${esc(leader.name)}</a>
       </div>
     </div>`;
+}
+
+function seasonLeaderCard(cat, rows) {
+  if (!rows || !rows.length) return "";
+  const items = rows.map((r, i) => `
+    <li>
+      <span class="rank">${i + 1}.</span>
+      <span class="who">
+        <a href="/player.html?id=${encodeURIComponent(r.player_id)}">${esc(r.name)}</a>
+        <span class="season">${esc(r.season_name)}</span>
+      </span>
+      <span class="value">${cat.rate ? fmtRate(r.value) : r.value}</span>
+    </li>`).join("");
+  return `<div class="card"><h3>${cat.label}</h3><ol class="leader-list">${items}</ol></div>`;
 }
 
 function winPct(s) {
@@ -62,10 +87,14 @@ function seasonHonors(seasons) {
     </div>`;
 }
 
-function render(seasons, career, copy) {
+function render(seasons, career, seasonLeaders, copy) {
   const leaders = career && career.leaders ? career.leaders : {};
   const minAB = career ? career.qualifyMinAB : null;
   const recordBook = RECORD_CATS.map((c) => leaderTile(c, leaders[c.key])).filter(Boolean).join("");
+
+  const slLeaders = seasonLeaders && seasonLeaders.leaders ? seasonLeaders.leaders : {};
+  const slMinAB = seasonLeaders ? seasonLeaders.qualifyMinAB : null;
+  const seasonLeaderCards = SEASON_CATS.map((c) => seasonLeaderCard(c, slLeaders[c.key])).filter(Boolean).join("");
 
   app.innerHTML = `
     <h1>Hall of Fame</h1>
@@ -74,6 +103,10 @@ function render(seasons, career, copy) {
     <h2 style="margin-top:24px">The Record Book</h2>
     ${minAB != null ? `<p class="muted" style="font-size:.8rem">Rate titles (OBP, SLG) require at least ${minAB} career at-bats to qualify — no cups of coffee on the leaderboard.</p>` : ""}
     ${recordBook ? `<div class="stat-row">${recordBook}</div>` : `<div class="card center"><p class="muted">No career stats yet.</p></div>`}
+
+    <h2 style="margin-top:32px">Single-Season Leaders</h2>
+    <p class="muted" style="font-size:.8rem">Best individual seasons, not career totals.${slMinAB != null ? ` Rate titles (OBP, SLG) require at least ${slMinAB} at-bats that season to qualify.` : ""}</p>
+    ${seasonLeaderCards ? `<div class="card-grid">${seasonLeaderCards}</div>` : `<div class="card center"><p class="muted">No season stats yet.</p></div>`}
 
     ${seasonHonors(seasons)}
 
@@ -88,12 +121,13 @@ function render(seasons, career, copy) {
 }
 
 try {
-  const [seasons, career, copy] = await Promise.all([
+  const [seasons, career, seasonLeaders, copy] = await Promise.all([
     api("/api/seasons").catch(() => []),
     api("/api/stats?season=career").catch(() => null),
+    api("/api/season-leaders").catch(() => null),
     getSiteCopy(),
   ]);
-  render(Array.isArray(seasons) ? seasons : [], career, copy);
+  render(Array.isArray(seasons) ? seasons : [], career, seasonLeaders, copy);
 } catch (err) {
   app.innerHTML = `<div class="card center"><h3>Couldn't open the trophy case</h3>
     <p class="muted">${esc(err.message || "Temporarily unavailable.")}</p></div>`;

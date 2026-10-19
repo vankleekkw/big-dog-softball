@@ -129,6 +129,14 @@ table.stats tfoot td { border-top: 2px solid var(--border); font-weight: 700; }
 .stat-tile .label { font-size: .75rem; text-transform: uppercase; color: var(--text-muted);
   letter-spacing: .05em; }
 
+/* ---- Ranked leader lists (single-season leaders) ---- */
+.leader-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.leader-list li { display: flex; align-items: baseline; gap: 8px; }
+.leader-list .rank { color: var(--text-muted); font-variant-numeric: tabular-nums; width: 1.2em; flex-shrink: 0; }
+.leader-list .who { flex: 1; min-width: 0; }
+.leader-list .season { display: block; font-size: .72rem; color: var(--text-muted); }
+.leader-list .value { font-weight: 700; color: var(--accent); font-variant-numeric: tabular-nums; }
+
 .muted { color: var(--text-muted); }
 .center { text-align: center; }
 .loading { padding: 40px; text-align: center; color: var(--text-muted); }
